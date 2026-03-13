@@ -1,0 +1,17 @@
+{
+  "fragments": 33,
+  "synergies": {
+    "laser_shield": false,
+    "nano_storm": false,
+    "gravity_burst": false,
+    "overdrive": false,
+    "echo_shot": false
+  },
+  "lore": [
+    "Sector Alpha-7",
+    "Enjambre Org\u00e1nico",
+    "Drones Mineros",
+    "El Nexo",
+    "La Se\u00f1al"
+  ]
+}
