@@ -59,3 +59,5 @@ Un shooter espacial estilo roguelike de ritmo rápido desarrollado en Python con
 - **nexus_data.json**: Archivo de persistencia para tus fragmentos y sinergias desbloqueadas.
 
 - **ghost_run.json**: Almacena datos de tus mejores partidas.
+
+Desarrollado con ❤️ por **Andres Carrillo/AndresCarrillo444**
