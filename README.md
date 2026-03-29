@@ -39,7 +39,7 @@ Un shooter espacial estilo roguelike de ritmo rápido desarrollado en Python con
 
 3. **Ejecuta el juego**
    ```bash
-   python rogue2.0.py
+   python Roguelike.py
 
 ## **Controles**
 - **WASD / Flechas: Movimiento de la nave.**
