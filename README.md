@@ -54,7 +54,7 @@ Un shooter espacial estilo roguelike de ritmo rápido desarrollado en Python con
 
 ### **Estructura del Proyecto**
 
-- **rogue2.0.py**: El núcleo del juego que contiene los sistemas de renderizado, física e IA.
+- **Roguelike.py**: El núcleo del juego que contiene los sistemas de renderizado, física e IA.
 
 - **nexus_data.json**: Archivo de persistencia para tus fragmentos y sinergias desbloqueadas.
 
