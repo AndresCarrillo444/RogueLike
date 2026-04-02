@@ -5398,11 +5398,11 @@ class MainMenu:
         hbg = (0, 60, 100) if help_hov else (0, 30, 60)
         pygame.draw.rect(surf, hbg, help_btn, border_radius=8)
         pygame.draw.rect(surf, (0, 140, 200) if help_hov else (0, 80, 130), help_btn, 1, border_radius=8)
-        ht = rm.get_font(14, True).render("❓ CONTROLES  [H]", True, (0, 200, 255) if help_hov else (0, 140, 180))
+        ht = rm.get_font(14, True).render("CONTROLES  [H]", True, (0, 200, 255) if help_hov else (0, 140, 180))
         surf.blit(ht, (help_btn.centerx - ht.get_width()//2, help_btn.centery - ht.get_height()//2))
         self._help_btn = help_btn
 
-        nav = rm.get_font(13).render("◄ ► Cambiar modo de juego  |  [N] Música  |  [X] Nexo  |  [H] Controles", True,(50,55,70))
+        nav = rm.get_font(13).render("◄ ► Cambiar modo de juego  |  [N] Música  |  [X] Nexo ", True,(50,55,70))
         surf.blit(nav,(SCREEN_W//2-nav.get_width()//2, 488))
 
         if self.game.sfx.music_muted:
