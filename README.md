@@ -1,4 +1,4 @@
-# COSMIC ROGUELIKE v5.0
+# COSMIC ROGUELIKE 
 
 Un shooter espacial estilo roguelike de ritmo rápido desarrollado en Python con Pygame. Enfréntate a enjambres orgánicos, drones mineros y jefes titánicos mientras navegas por un universo dinámico lleno de peligros gravitacionales y fenómenos cósmicos.
 
@@ -47,8 +47,6 @@ Un shooter espacial estilo roguelike de ritmo rápido desarrollado en Python con
 - **Mouse: Apuntar y Disparar.**
 
 - **[E]: Activar Sistema de Hack (EMP).**
-
-- **[Shift]: Turbo / Sobredrive.**
 
 - **[Esc]: Menú / Pausa / Nexo de Datos.**
 
