@@ -57,3 +57,5 @@ Optimización: Uso de métodos abstractos (ABC) para definir comportamientos bas
 Escalabilidad: El WaveManager permite añadir nuevos tipos de enemigos y patrones de ataque simplemente extendiendo las configuraciones existentes.
 
 #### Desarrollado con un enfoque en clean code y arquitecturas de software eficientes.
+
+Desarrollado con ❤️ por **Andres Carrillo/AndresCarrillo444**
