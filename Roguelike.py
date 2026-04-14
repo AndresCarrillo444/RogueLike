@@ -1,3 +1,4 @@
+# Standard library and third-party imports required by the engine.
 import pygame
 import numpy as np
 import math
@@ -10,10 +11,12 @@ from dataclasses import dataclass, field
 from typing import Optional, List, Dict, Tuple, Any
 from abc import ABC, abstractmethod
 
+# Window dimensions, target frame-rate and window title.
 SCREEN_W, SCREEN_H = 1280, 720
 FPS   = 60
 TITLE = "COSMIC ROGUELIKE"
 
+# Named colour palette used throughout the rendering code.
 BLACK     = (0,   0,   0)
 WHITE     = (255, 255, 255)
 CYAN      = (0,   200, 235)
@@ -36,19 +39,26 @@ HACK_GREEN = (0, 255, 120)
 MAGENTA   = (255, 0, 200)
 GOLD      = (255, 200, 50)
 
+# Movement and projectile speed caps (world units per second at 60 FPS).
 MAX_SPEED_PLAYER = 6.0
 MAX_SPEED_ENEMY  = 3.0
 BULLET_SPEED     = 15.0
 BULLET_POOL_SIZE = 400
 ENEMY_POOL_SIZE  = 120
 
+# World and sector dimensions. The world is subdivided into SECTOR_SIZE tiles
+# for efficient procedural generation and spatial queries.
 WORLD_W, WORLD_H = 5120, 5120
 SECTOR_SIZE      = 512
 ASTEROID_DENSITY_BASE = 0.70
 
+# Quadtree capacity limits: max objects per node before subdivision,
+# and the maximum recursion depth.
 QT_MAX_OBJECTS = 8
 QT_MAX_LEVELS  = 6
 
+# Boids flocking weights: separation keeps ships from overlapping,
+# alignment matches heading, cohesion groups them, seek pulls toward the player.
 W_SEPARATION  = 1.8
 W_ALIGNMENT   = 1.0
 W_COHESION    = 0.9
@@ -56,10 +66,13 @@ W_SEEK_PLAYER = 0.5
 NEIGHBOR_DIST = 120.0
 SEP_DIST      = 45.0
 
+# Enemy AI distances: detection range, attack range, and HP ratio at which
+# enemies switch to flee behaviour.
 DETECT_DIST = 350.0
 ATTACK_DIST = 200.0
 FLEE_HEALTH = 0.25
 
+# XP rewards per enemy type and level-scaling parameters.
 XP_PER_SCOUT    = 40
 XP_PER_FIGHTER  = 80
 XP_PER_HEAVY    = 130
@@ -72,6 +85,7 @@ XP_SCALE        = 1.35
 
 
 
+# Gravitational physics constants and miscellaneous gameplay thresholds.
 PLANET_GRAVITY       = 380.0
 PLANET_SLINGSHOT_CAP = 14.0
 GHOST_SAVE_FILE      = "ghost_run.json"
@@ -92,10 +106,12 @@ CREATURE_HP          = 60
 MODULE_DROP_CHANCE   = 0.28
 AI_LOG_MAX           = 6
 
+# Game mode identifier strings used for state switching and music selection.
 GAMEMODE_CLASSIC    = "Clásico"
 GAMEMODE_SURVIVAL   = "Supervivencia"
 GAMEMODE_TIMEATTACK = "Contrarreloj"
 
+# Hack ability timings and visual configuration.
 HACK_DURATION        = 2.8
 HACK_COOLDOWN        = 12.0
 HACK_COLOR           = (0, 255, 120)
@@ -110,14 +126,21 @@ ZOOM_SPEED           = 2.0
 BOSS_BULLET_HELL_CD  = 0.08
 DATA_FRAG_DROP_CHANCE = 0.35
 NEXUS_SAVE_FILE       = "nexus_data.json"
+SCOREBOARD_SAVE_FILE  = "scoreboard.json"   # Persistent high-score table.
 
+# Bullet-time (slow-motion) system parameters.
 BULLET_TIME_HP_THRESH  = 0.10
 BULLET_TIME_SCALE      = 0.28
 BULLET_TIME_FADE_SPEED = 3.0
-LIGHT_SURF_ALPHA       = 200
+# Ambient darkness level for the deferred lighting pass (0 = no darkness,
+# 255 = fully black). Lowered from 200 to 120 for a brighter ambient environment.
+LIGHT_SURF_ALPHA       = 120
+# Number of independent star layers used by the parallax background system.
 PARALLAX_LAYERS        = 3
+# Lifespan and burst size of hull-damage sparks.
 SPARK_LIFE             = 0.45
 SPARK_COUNT_HIT        = 8
+# Camera shake triggered by proximity to Titan-class enemies.
 SHAKE_TITAN_DIST       = 600
 SHAKE_TITAN_STRENGTH   = 0.25
 
@@ -127,59 +150,59 @@ SHAKE_TITAN_STRENGTH   = 0.25
 class AILog:
     """The sarcastic ship AI that comments on everything."""
     QUIPS_DANGER = [
-        "⚠ Recomiendo HUIR. Ahora mismo.", "⚠ Shields al 0%. Interesante decisión.",
-        "⚠ Matemáticamente, estás muerto.", "⚠ ¿Seguro que esto es una táctica?",
+        "Recomiendo HUIR. Ahora mismo.", "Shields al 0%. Interesante decisión.",
+        "Matemáticamente, estás muerto.", "¿Seguro que esto es una táctica?",
     ]
     QUIPS_KILL_STREAK = [
-        "✦ Impresionante. Casi como un piloto de verdad.", "✦ Racha de bajas. Inusual.",
-        "✦ Quizás sobrevivas después de todo.", "✦ Estadísticas actualizadas: menos malo.",
-        "✦ Elimina 10 más y lo anoto en mi log positivo.",
+        "Impresionante. Casi como un piloto de verdad.", "Racha de bajas. Inusual.",
+        "Quizás sobrevivas después de todo.", "Estadísticas actualizadas: menos malo.",
+        "Elimina 10 más y lo anoto en mi log positivo.",
     ]
     QUIPS_IDLE = [
-        "▸ Detectando amenazas... o café. Difícil de decir.",
-        "▸ Sistema de propulsión: operativo. Piloto: cuestionable.",
-        "▸ Escaneo de sector completado. Nada interesante. Como siempre.",
-        "▸ Energía reactora al 94%. El 6% restante es suspenso.",
-        "▸ Recuerda: los asteroides no son decorativos.",
-        "▸ IA v7.3 en línea. Esperando órdenes coherentes.",
-        "▸ He calculado 1.4M de formas de morir aquí. Buena suerte.",
+        "Detectando amenazas... o café. Difícil de decir.",
+        "Sistema de propulsión: operativo. Piloto: cuestionable.",
+        "Escaneo de sector completado. Nada interesante. Como siempre.",
+        "Energía reactora al 94%. El 6% restante es suspenso.",
+        "Recuerda: los asteroides no son decorativos.",
+        "IA v7.3 en línea. Esperando órdenes coherentes.",
+        "He calculado 1.4M de formas de morir aquí. Buena suerte.",
     ]
     QUIPS_ECO = [
-        "▸ Los enemigos aprenden de tus tácticas. Variedad, piloto.",
-        "▸ Mutación detectada en hostiles. Tu culpa.",
-        "▸ Siguiente oleada: más rápida, más resistente. ¿Contento?",
+        "Los enemigos aprenden de tus tácticas. Variedad, piloto.",
+        "Mutación detectada en hostiles. Tu culpa.",
+        "Siguiente oleada: más rápida, más resistente. ¿Contento?",
     ]
     QUIPS_MODULE = [
-        "▸ Módulo recogido. Arquitectura naval... creativa.",
-        "▸ Componente enemigo instalado. Espero que no explote.",
-        "▸ Tu nave ya no es tuya. Es una colección.",
+        "Módulo recogido. Arquitectura naval... creativa.",
+        "Componente enemigo instalado. Espero que no explote.",
+        "Tu nave ya no es tuya. Es una colección.",
     ]
     QUIPS_ZONE = [
-        "▸ Zona gravitacional detectada. Consejo: no acercarse.",
-        "▸ Agujero negro a la vista. Procede con... precaución.",
-        "▸ Nebulosa densa. Propulsores al 55%. Encantador.",
+        "Zona gravitacional detectada. Consejo: no acercarse.",
+        "Agujero negro a la vista. Procede con... precaución.",
+        "Nebulosa densa. Propulsores al 55%. Encantador.",
     ]
     QUIPS_SYNERGY = {
-        "laser_shield":  "▸ Has aprendido a usar las paredes. Eficiente, supongo.",
-        "nano_storm":    "▸ Los nano-bots ahora generan campo eléctrico. Mi creación favorita.",
-        "gravity_burst": "▸ El EMP también empuja. Usas la física como arma. Bien.",
-        "overdrive":     "▸ Tu estela de movimiento es ahora letal. Poético.",
-        "echo_shot":     "▸ Disparo eco activo. Cada décimo balazo busca solo. Elegante.",
+        "laser_shield":  "Has aprendido a usar las paredes. Eficiente, supongo.",
+        "nano_storm":    "Los nano-bots ahora generan campo eléctrico. Mi creación favorita.",
+        "gravity_burst": "El EMP también empuja. Usas la física como arma. Bien.",
+        "overdrive":     "Tu estela de movimiento es ahora letal. Poético.",
+        "echo_shot":     "Disparo eco activo. Cada décimo balazo busca solo. Elegante.",
     }
     QUIPS_FACTION_SWARM = [
-        "📡 TRADUCCIÓN ENJAMBRE: '¡Consumir! ¡Crecer! ¡Devorar todo!'",
-        "📡 ENJAMBRE: señal química detectada — 'Intrusos en nuestro sector de caza.'",
-        "📡 ENJAMBRE: '¿Qué es esa cosa pequeña? ¿Comestible?'",
+        "TRADUCCIÓN ENJAMBRE: '¡Consumir! ¡Crecer! ¡Devorar todo!'",
+        "ENJAMBRE: señal química detectada — 'Intrusos en nuestro sector de caza.'",
+        "ENJAMBRE: '¿Qué es esa cosa pequeña? ¿Comestible?'",
     ]
     QUIPS_FACTION_DRONE = [
-        "📡 TRADUCCIÓN DRONES: 'OBJETIVO: extracción. OBSTÁCULO: orgánicos. SOLUCIÓN: eliminar.'",
-        "📡 DRONES: protocolo 7-KRIBEL activado — purga de sector iniciada.",
-        "📡 DRONES: 'La eficiencia requiere la eliminación de variables no controladas.'",
+        "TRADUCCIÓN DRONES: 'OBJETIVO: extracción. OBSTÁCULO: orgánicos. SOLUCIÓN: eliminar.'",
+        "DRONES: protocolo 7-KRIBEL activado — purga de sector iniciada.",
+        "DRONES: 'La eficiencia requiere la eliminación de variables no controladas.'",
     ]
     QUIPS_BULLET_TIME = [
-        "⚡ MODO CRÍTICO — Dilatación temporal activada. Sobrevive.",
-        "⚡ Integridad estructural: CRÍTICA. Tiempo: relativo. Ahora esquiva.",
-        "⚡ Último 10%. La física te da una oportunidad. No la desperdicies.",
+        "MODO CRÍTICO — Dilatación temporal activada. Sobrevive.",
+        "Integridad estructural: CRÍTICA. Tiempo: relativo. Ahora esquiva.",
+        "Último 10%. La física te da una oportunidad. No la desperdicies.",
     ]
 
     def __init__(self):
@@ -366,7 +389,7 @@ class DataNexus:
         t_title = rm.get_font(36, True).render("NEXO DE DATOS", True, (0, 220, 255))
         surf.blit(t_title, (SCREEN_W//2 - t_title.get_width()//2, 30))
 
-        frag_t = rm.get_font(18).render(f"⬡ Fragmentos: {self.fragments}", True, GOLD)
+        frag_t = rm.get_font(18).render(f"Fragmentos: {self.fragments}", True, GOLD)
         surf.blit(frag_t, (SCREEN_W//2 - frag_t.get_width()//2, 80))
 
         y = 130
@@ -382,7 +405,7 @@ class DataNexus:
             surf.blit(nm, (84, y))
             ds = rm.get_font(12).render(s["desc"], True, (140, 140, 160))
             surf.blit(ds, (84, y + 20))
-            status = "✓ DESBLOQUEADO" if unlocked else f"⬡ {s['cost']} frags"
+            status = "DESBLOQUEADO" if unlocked else f"{s['cost']} frags"
             st_col = GREEN if unlocked else (YELLOW if self.fragments >= s["cost"] else RED)
             st_t = rm.get_font(13, True).render(status, True, st_col)
             surf.blit(st_t, (560, y + 12))
@@ -392,10 +415,10 @@ class DataNexus:
         surf.blit(rm.get_font(18, True).render("ARCHIVOS DESBLOQUEADOS", True, (180, 100, 255)), (80, y)); y += 28
         for title, text, needed in self.LORE:
             if title in self.lore_found:
-                nm2 = rm.get_font(13, True).render(f"▸ {title}", True, (200, 160, 255))
+                nm2 = rm.get_font(13, True).render(f"  {title}", True, (200, 160, 255))
                 surf.blit(nm2, (84, y)); y += 18
             else:
-                nxt = rm.get_font(12).render(f"  ??? — Necesitas {needed} frags", True, (60, 60, 80))
+                nxt = rm.get_font(12).render(f"??? — Necesitas {needed} frags", True, (60, 60, 80))
                 surf.blit(nxt, (84, y)); y += 18
 
         hint = rm.get_font(13).render("↑↓ Navegar  |  ENTER: Comprar Sinergia  |  ESC: Volver", True, (60, 80, 100))
@@ -456,7 +479,7 @@ class HackSystem:
                     b.color = HACK_GREEN
                     self._hacked_bullets.append(b)
         game.sfx.play("skill_upgrade")
-        game.ai_log._push("⚡ HACK activado — Proyectiles capturados.", 4.0)
+        game.ai_log._push("HACK activado — Proyectiles capturados.", 4.0)
 
     def update(self, dt, game):
         if self.cooldown > 0:
@@ -508,7 +531,7 @@ class HackSystem:
 
         n = len([b for b in self._hacked_bullets if b.active])
         if n > 0:
-            game.ai_log._push(f"⚡ {n} proyectiles redirigidos. ¡Fuego amigo convertido!", 4.5)
+            game.ai_log._push(f"{n} proyectiles redirigidos. ¡Fuego amigo convertido!", 4.5)
             if hasattr(game, "nexus") and game.nexus.has_synergy("gravity_burst"):
                 for e in enemies:
                     ep = e.transform.pos - pp
@@ -542,7 +565,7 @@ class HackSystem:
         """Draw cooldown indicator."""
         if self.ready:
             col = HACK_GREEN
-            txt = "[E] HACK  ✓"
+            txt = "[E] HACK "
         else:
             ratio = 1.0 - self.cd_ratio
             col = (int(HACK_GREEN[0]*ratio), int(HACK_GREEN[1]*ratio), int(HACK_GREEN[2]*ratio))
@@ -594,7 +617,7 @@ class FactionWarManager:
             self._buff_timer -= dt
             if self._buff_timer <= 0:
                 self._buff_active = False
-                self.game.ai_log._push("▸ Buff de facción expirado.", 3.5)
+                self.game.ai_log._push("  Buff de facción expirado.", 3.5)
 
         active_en = [e for e in self.game.enemy_pool.active if e.active]
         for e in active_en:
@@ -663,7 +686,7 @@ class FactionWarManager:
         pp = p.transform.pos
         count_each = 3 + p.level_sys.level // 2
         self.game.ai_log._push(
-            f"⚔ CONFLICTO DE FACCIONES — Enjambre vs Drones en tu sector.", 6.0)
+            f"CONFLICTO DE FACCIONES — Enjambre vs Drones en tu sector.", 6.0)
         self.game.sfx.play("boss_warning")
         self.game.ai_log.push_faction_war(FACTION_SWARM)
         self.game.ai_log.push_faction_war(FACTION_DRONE)
@@ -703,7 +726,7 @@ class FactionWarManager:
         self._buff_timer  = 15.0
         self._active_war  = False
         self.game.ai_log._push(
-            f"★ Alianza temporal con {'Enjambre' if faction == FACTION_SWARM else 'Drones'}. "
+            f"Alianza temporal con {'Enjambre' if faction == FACTION_SWARM else 'Drones'}. "
             f"Velocidad +20% por 15s.", 5.5)
 
     @property
@@ -713,6 +736,198 @@ class FactionWarManager:
     @property
     def speed_buff(self) -> float:
         return 1.20 if self._buff_active else 1.0
+
+
+FACTION_ALLY = "ally"
+
+class AlliedDrone:
+    """
+    A single allied drone that flocks using Boids (separation, alignment, cohesion)
+    and attacks enemies automatically. Spawned by AlliedFleet.
+    """
+    RADIUS = 10
+
+    def __init__(self, game, idx: int):
+        self.game    = game
+        self.idx     = idx
+        self.pos     = Vec2(0, 0)
+        self.vel     = Vec2(0, 0)
+        self.active  = False
+        self.hp      = 40
+        self.max_hp  = 40
+        self.rect    = pygame.Rect(0, 0, self.RADIUS*2, self.RADIUS*2)
+        self.shoot_cd = 0.0
+        self._angle  = 0.0
+
+    def spawn(self, x, y):
+        self.pos    = Vec2(x, y)
+        self.vel    = Vec2(random.uniform(-1,1), random.uniform(-1,1))
+        self.hp     = self.max_hp
+        self.active = True
+
+    def reset(self):
+        self.active = False
+        self.vel    = Vec2(0, 0)
+
+    def _boids(self, siblings):
+        sep = Vec2(0,0); ali = Vec2(0,0); coh = Vec2(0,0)
+        ns = na = nc = 0
+        for o in siblings:
+            if o is self or not o.active: continue
+            d = (self.pos - o.pos).length()
+            if 0 < d < SEP_DIST * 0.6:
+                sep += (self.pos - o.pos).normalize() / max(d,0.1); ns += 1
+            if 0 < d < NEIGHBOR_DIST * 0.7:
+                ali += o.vel; na += 1
+                coh += o.pos; nc += 1
+        if ns: sep /= ns
+        if na: ali = vec_limit(ali / na, MAX_SPEED_ENEMY)
+        if nc: coh = vec_limit(coh/nc - self.pos, MAX_SPEED_ENEMY)
+        return sep*W_SEPARATION + ali*W_ALIGNMENT + coh*W_COHESION
+
+    def update(self, dt, siblings):
+        if not self.active: return
+        p   = self.game.player
+        pp  = p.transform.pos
+
+        # Cohesion toward player
+        to_player = pp - self.pos
+        if to_player.length() > 120:
+            seek = to_player.normalize() * MAX_SPEED_ENEMY * 0.9
+        else:
+            seek = Vec2(0, 0)
+
+        boids = self._boids(siblings)
+        force = seek * W_SEEK_PLAYER + boids
+        self.vel += force * dt * 60
+        self.vel  = vec_limit(self.vel, MAX_SPEED_ENEMY * 1.4)
+        self.vel *= 0.93
+        self.pos += self.vel * dt * 60
+        self.pos.x = max(20, min(WORLD_W-20, self.pos.x))
+        self.pos.y = max(20, min(WORLD_H-20, self.pos.y))
+        self.rect.center = (int(self.pos.x), int(self.pos.y))
+
+        if self.vel.length() > 0.1:
+            self._angle = math.degrees(math.atan2(self.vel.y, self.vel.x)) + 90
+
+        # Attack nearest non-allied enemy
+        self.shoot_cd -= dt
+        if self.shoot_cd <= 0:
+            best_e = None; best_d = 280.0
+            for e in self.game.enemy_pool.active:
+                if not e.active: continue
+                if getattr(e, "_faction", None) == FACTION_ALLY: continue
+                d = (e.transform.pos - self.pos).length()
+                if d < best_d:
+                    best_d = d; best_e = e
+            if best_e:
+                self.shoot_cd = 1.2
+                to_e = best_e.transform.pos - self.pos
+                if to_e.length() > 0:
+                    vel2 = to_e.normalize() * BULLET_SPEED * 0.75
+                    ang2 = math.degrees(math.atan2(to_e.y, to_e.x)) + 90
+                    b    = self.game.bullet_pool.get()
+                    if b:
+                        b.activate(self.pos.x, self.pos.y, vel2, 8, "player", (80, 255, 140), ang2)
+
+    def draw(self, surf, camera):
+        if not self.active: return
+        sx = int(self.pos.x - camera.x)
+        sy = int(self.pos.y - camera.y)
+        if not (-30 < sx < SCREEN_W+30 and -30 < sy < SCREEN_H+30): return
+        t   = time.time()
+        R   = self.RADIUS
+        rad = math.radians(self._angle)
+        def rot(dx, dy):
+            rx = dx*math.cos(rad) - dy*math.sin(rad)
+            ry = dx*math.sin(rad) + dy*math.cos(rad)
+            return (int(sx+rx), int(sy+ry))
+        col = (80, 255, 140)
+        pygame.draw.polygon(surf, (10,40,20), [rot(0,-R), rot(-R*0.5,R*0.6), rot(0,R*0.15), rot(R*0.5,R*0.6)])
+        pygame.draw.polygon(surf, col, [rot(0,-R*0.9), rot(-R*0.45,R*0.55), rot(0,R*0.1), rot(R*0.45,R*0.55)])
+        pygame.draw.polygon(surf, WHITE, [rot(0,-R*0.9), rot(-R*0.45,R*0.55), rot(0,R*0.1), rot(R*0.45,R*0.55)], 1)
+        # Glow
+        pulse = int(6 + 3*math.sin(t*4 + self.idx))
+        gs = pygame.Surface((pulse*2, pulse*2), pygame.SRCALPHA)
+        pygame.draw.circle(gs, (80,255,140,60), (pulse,pulse), pulse)
+        surf.blit(gs, (sx-pulse, sy-pulse))
+        # HP bar
+        bw = 20
+        pygame.draw.rect(surf, DARK_GRAY, (sx-bw//2, sy+R+2, bw, 3))
+        pygame.draw.rect(surf, GREEN, (sx-bw//2, sy+R+2, int(bw*self.hp/self.max_hp), 3))
+
+
+class AlliedFleet:
+    """
+    Manages the player's allied drone squadron.
+    Activated with [F] key (cooldown 45s). Spawns 4 drones that use Boids AI
+    and auto-attack enemies. They are recognized as allies by the faction system.
+    """
+    MAX_DRONES  = 4
+    SUMMON_CD   = 45.0
+    DRONE_LIFE  = 30.0   # seconds before drones expire
+
+    def __init__(self, game):
+        self.game    = game
+        self._drones: List[AlliedDrone] = [AlliedDrone(game, i) for i in range(self.MAX_DRONES)]
+        self._cooldown = 0.0
+        self._life_timer = 0.0
+        self._active = False
+
+    @property
+    def ready(self): return self._cooldown <= 0
+
+    @property
+    def cd_ratio(self): return max(0.0, self._cooldown / self.SUMMON_CD)
+
+    def summon(self):
+        if not self.ready: return
+        self._cooldown   = self.SUMMON_CD
+        self._life_timer = self.DRONE_LIFE
+        self._active     = True
+        pp = self.game.player.transform.pos
+        for i, d in enumerate(self._drones):
+            ang  = i * (math.pi * 2 / self.MAX_DRONES)
+            d.spawn(pp.x + math.cos(ang)*80, pp.y + math.sin(ang)*80)
+        self.game.ai_log._push(f"FLOTA DE APOYO invocada — {self.MAX_DRONES} drones aliados.", 5.5)
+        self.game.sfx.play("skill_upgrade")
+
+    def update(self, dt):
+        if self._cooldown > 0:
+            self._cooldown -= dt
+        if not self._active:
+            return
+        self._life_timer -= dt
+        if self._life_timer <= 0:
+            for d in self._drones:
+                d.reset()
+            self._active = False
+            self.game.ai_log._push("Drones aliados han expirado.", 3.5)
+            return
+        active_siblings = [d for d in self._drones if d.active]
+        for d in self._drones:
+            d.update(dt, active_siblings)
+
+    def draw(self, surf, camera):
+        for d in self._drones:
+            d.draw(surf, camera)
+
+    def draw_hud(self, surf, rm, x, y):
+        if self.ready:
+            col = (80, 255, 140)
+            txt = "[F] FLOTA "
+        else:
+            ratio = 1.0 - self.cd_ratio
+            col   = (int(80*ratio), int(255*ratio), int(140*ratio))
+            secs  = int(self._cooldown) + 1
+            txt   = f"[F] FLOTA  {secs}s"
+        t2 = rm.get_font(13, True).render(txt, True, col)
+        surf.blit(t2, (x, y))
+        bw = 110
+        pygame.draw.rect(surf, (20,20,20), (x, y+16, bw, 5), border_radius=2)
+        fill = int(bw * (1 - self.cd_ratio))
+        if fill > 0:
+            pygame.draw.rect(surf, col, (x, y+16, fill, 5), border_radius=2)
 
 
 class DynamicCamera:
@@ -767,9 +982,13 @@ class DynamicCamera:
 
 class MotionTrail:
     """
-    Records player position history and draws fading ghost sprites.
+    Sistema de Ecos: records player position/angle history and draws fading ghost
+    silhouettes with decreasing opacity. Each ghost uses set_alpha per-frame.
     Activates during turbo (high speed) or near boss.
     """
+    GHOST_FRAMES = 10
+    SAMPLE_CD    = 0.035
+
     def __init__(self):
         self._history: List[Tuple[float, float, float]] = []
         self._cd = 0.0
@@ -777,16 +996,16 @@ class MotionTrail:
     def update(self, dt, player):
         self._cd -= dt
         spd = player.transform.vel.length()
-        if spd > MAX_SPEED_PLAYER * 0.55 and self._cd <= 0:
-            self._cd = 0.04
+        if spd > MAX_SPEED_PLAYER * 0.45 and self._cd <= 0:
+            self._cd = self.SAMPLE_CD
             self._history.append((
                 player.transform.pos.x,
                 player.transform.pos.y,
                 player.transform.angle
             ))
-            if len(self._history) > MOTION_BLUR_FRAMES:
+            if len(self._history) > self.GHOST_FRAMES:
                 self._history.pop(0)
-        elif spd <= MAX_SPEED_PLAYER * 0.3:
+        elif spd <= MAX_SPEED_PLAYER * 0.25:
             if self._history:
                 self._history.pop(0)
 
@@ -798,22 +1017,28 @@ class MotionTrail:
         for i, (px, py, ang) in enumerate(self._history):
             sx = int(px - camera.x)
             sy = int(py - camera.y)
-            if not (-60 < sx < SCREEN_W+60 and -60 < sy < SCREEN_H+60):
+            if not (-80 < sx < SCREEN_W+80 and -80 < sy < SCREEN_H+80):
                 continue
-            alpha   = int(70 * (i / n))
-            scale   = 0.6 + 0.4 * (i / n)
-            rad     = math.radians(ang)
-            r       = int(R * scale)
+            ratio  = (i + 1) / n          # 0=oldest fade, 1=newest bright
+            alpha  = int(55 * ratio)
+            scale  = 0.5 + 0.5 * ratio
+            rad    = math.radians(ang)
+            r      = max(1, int(R * scale))
+            ghost_col = (
+                int(80 + 175 * (1 - ratio)),
+                int(180 + 75 * ratio),
+                255
+            )
+            cos_r, sin_r = math.cos(rad), math.sin(rad)
 
-            def rot_g(dx, dy):
-                rx = dx*math.cos(rad) - dy*math.sin(rad)
-                ry = dx*math.sin(rad) + dy*math.cos(rad)
-                return (int(sx+rx*scale), int(sy+ry*scale))
+            def _r(dx, dy, sx=sx, sy=sy, scale=scale, cr=cos_r, sr=sin_r):
+                return (int(sx + (dx*cr - dy*sr)*scale),
+                        int(sy + (dx*sr + dy*cr)*scale))
 
-            pts = [rot_g(0,-r), rot_g(-r*0.55, r*0.65),
-                   rot_g(0, r*0.2), rot_g(r*0.55, r*0.65)]
+            pts = [_r(0,-r), _r(-r*0.55, r*0.65), _r(0, r*0.2), _r(r*0.55, r*0.65)]
             ghost_s = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
-            pygame.draw.polygon(ghost_s, (*CYAN, alpha), pts)
+            pygame.draw.polygon(ghost_s, (*ghost_col, alpha), pts)
+            pygame.draw.polygon(ghost_s, (*ghost_col, min(255, alpha*2)), pts, 1)
             surf.blit(ghost_s, (0, 0), special_flags=pygame.BLEND_RGBA_ADD)
 
 
@@ -862,7 +1087,7 @@ class BulletHellBoss:
         self.rect.center = (int(x), int(y))
         self.game.sfx.play("boss_warning")
         self.game.sfx.play("titan_spawn")
-        self.game.ai_log._push("⚠ JEFE GEOMÉTRICO detectado — Patrones Bullet Hell activos.", 6.0)
+        self.game.ai_log._push("JEFE GEOMÉTRICO detectado — Patrones Bullet Hell activos.", 6.0)
 
     def update(self, dt):
         if not self.active:
@@ -2032,9 +2257,11 @@ class SoundManager:
     def muted(self): return self._muted
 
 
+# Alias for pygame's 2D vector type used throughout the codebase.
 Vec2 = pygame.math.Vector2
 
 def vec_limit(v: Vec2, max_len: float) -> Vec2:
+    """Return v scaled down to max_len if its length exceeds that value."""
     length = v.length()
     if length > max_len and length > 0:
         return v * (max_len / length)
@@ -2042,12 +2269,17 @@ def vec_limit(v: Vec2, max_len: float) -> Vec2:
 
 
 class PerlinNoise:
+    """
+    Deterministic Perlin noise generator used for procedural terrain,
+    asteroid density, and nebula colour variation.
+    """
     def __init__(self, seed: int = 42):
         rng  = np.random.default_rng(seed)
         perm = np.arange(256, dtype=int)
         rng.shuffle(perm)
         self._p = np.concatenate([perm, perm])
 
+    # Ken Perlin's smoothstep, linear interpolation, and gradient helpers.
     @staticmethod
     def _fade(t):  return t*t*t*(t*(t*6-15)+10)
     @staticmethod
@@ -2075,23 +2307,30 @@ class PerlinNoise:
         return val/mx
 
 
+# Axis-aligned bounding rectangle for a quadtree node.
 @dataclass
 class QTBounds:
     x: float; y: float; w: float; h: float
     def contains(self,px,py): return self.x<=px<self.x+self.w and self.y<=py<self.y+self.h
 
 class Quadtree:
+    """
+    Recursive spatial partitioning structure used to accelerate
+    bullet-enemy and bullet-asteroid collision queries.
+    """
     def __init__(self, bounds, level=0):
         self.bounds  = bounds; self.level = level
         self.objects: List[Any] = []
         self.nodes:  List[Optional["Quadtree"]] = [None]*4
 
     def clear(self):
+        """Remove all objects and collapse all child nodes."""
         self.objects.clear()
         for i in range(4):
             if self.nodes[i]: self.nodes[i].clear(); self.nodes[i]=None
 
     def _split(self):
+        """Subdivide this node into four equal quadrants."""
         hw,hh = self.bounds.w/2, self.bounds.h/2
         x,y   = self.bounds.x, self.bounds.y
         self.nodes[0]=Quadtree(QTBounds(x+hw,y,   hw,hh),self.level+1)
@@ -2112,6 +2351,7 @@ class Quadtree:
         return -1
 
     def insert(self, obj):
+        """Insert obj into the deepest fitting node, splitting if over capacity."""
         if self.nodes[0]:
             idx = self._get_index(obj)
             if idx!=-1: self.nodes[idx].insert(obj); return
@@ -2125,6 +2365,7 @@ class Quadtree:
                 else: i+=1
 
     def retrieve(self, obj):
+        """Return all objects that could collide with obj."""
         result = list(self.objects)
         if self.nodes[0]:
             idx=self._get_index(obj)
@@ -2136,11 +2377,13 @@ class Quadtree:
 
 
 class Component(ABC):
+    """Base class for all entity components. owner is the entity that holds it."""
     def __init__(self, owner): self.owner = owner
     @abstractmethod
     def update(self, dt): ...
 
 class TransformComponent(Component):
+    """Stores world position, velocity and rotation angle. Updated every frame."""
     def __init__(self, owner, x=0.0, y=0.0):
         super().__init__(owner)
         self.pos   = Vec2(x, y)
@@ -2151,10 +2394,12 @@ class TransformComponent(Component):
         self.pos += self.vel * dt * 60
 
 class HealthComponent(Component):
+    """Tracks HP, exposes a take_damage() method and a normalised ratio property."""
     def __init__(self, owner, max_hp):
         super().__init__(owner)
         self.max_hp = max_hp; self.hp = max_hp
     def take_damage(self, amount):
+        """Reduce HP by amount. Returns True if the entity died (HP reached 0)."""
         self.hp = max(0, self.hp-amount)
         return self.hp <= 0
     @property
@@ -2162,6 +2407,7 @@ class HealthComponent(Component):
     def update(self, dt): pass
 
 class PhysicsComponent(Component):
+    """Clamps velocity to max_speed and applies per-frame friction."""
     def __init__(self, owner, max_speed, friction=0.92):
         super().__init__(owner)
         self.max_speed = max_speed; self.friction = friction
@@ -2171,6 +2417,7 @@ class PhysicsComponent(Component):
         t.vel *= self.friction
 
 class InputComponent(Component):
+    """Reads keyboard/mouse state and applies acceleration and rotation to the player."""
     def update(self, dt):
         keys  = pygame.key.get_pressed()
         owner = self.owner
@@ -2190,16 +2437,23 @@ class InputComponent(Component):
 
 
 class ObjectPool:
+    """
+    Pre-allocates a fixed set of reusable objects to avoid GC pressure.
+    Used for bullets and enemies. Inactive objects sit in _pool; active
+    ones are tracked in _active.
+    """
     def __init__(self, factory, size):
         self._pool   = [factory() for _ in range(size)]
         self._active = []
     def get(self):
+        """Retrieve an object from the pool. Returns None if the pool is exhausted."""
         if self._pool:
             obj = self._pool.pop()
             self._active.append(obj)
             return obj
         return None
     def release(self, obj):
+        """Return obj to the pool, calling reset() to clear its state."""
         if obj in self._active:
             self._active.remove(obj)
             obj.reset()
@@ -2209,6 +2463,10 @@ class ObjectPool:
 
 
 class Bullet:
+    """
+    Pooled projectile. Supports player, enemy and faction-war ownership.
+    Visual appearance uses a short line with a bright highlight at the centre.
+    """
     W, H = 4, 14
 
     def __init__(self):
@@ -2224,11 +2482,13 @@ class Bullet:
         self._hacked  = False
 
     def reset(self):
+        """Clear state so this object can be reused from the pool."""
         self.active = False; self.life = 0.0
         self._bounced = False
         self._hacked  = False
 
     def activate(self, x, y, vel, damage=10, owner="player", color=CYAN, angle=0.0):
+        """Initialise the bullet at world position (x,y) with the given velocity."""
         self.rect.center = (int(x), int(y))
         self.vel    = Vec2(vel)
         self.damage = damage
@@ -2239,6 +2499,7 @@ class Bullet:
         self.angle  = angle
 
     def update(self, dt, game=None):
+        """Move the bullet and return False when it should be recycled."""
         self.rect.x += int(self.vel.x * dt * 60)
         self.rect.y += int(self.vel.y * dt * 60)
         self.life += dt
@@ -2267,16 +2528,23 @@ class Bullet:
                          (int(sx+dx*0.3), int(sy+dy*0.3)), 2)
 
 
+# Finite-state machine states for enemy AI.
 class EnemyState(Enum):
     PATROL = auto(); CHASE = auto(); ATTACK = auto(); FLEE = auto()
 
 class FSM:
+    """
+    Lightweight finite-state machine. Transitions are evaluated in
+    insertion order; the first matching condition wins.
+    """
     def __init__(self, initial):
         self.state = initial
         self._tr: Dict[EnemyState, List] = {}
     def add_transition(self, frm, cond, to, on_enter=None):
+        """Register a conditional transition from state frm to state to."""
         self._tr.setdefault(frm,[]).append((cond,to,on_enter))
     def update(self, ctx):
+        """Evaluate all transitions for the current state and switch if a condition fires."""
         for cond,to,on_enter in self._tr.get(self.state,[]):
             if cond(ctx):
                 self.state = to
@@ -2286,6 +2554,12 @@ class FSM:
 
 
 class Enemy:
+    """
+    Base enemy entity. Uses a component architecture (Transform, Health, Physics)
+    and a Boids-based flocking force combined with FSM states (PATROL / CHASE /
+    ATTACK / FLEE). Subclasses override _try_shoot() and draw() for specialised
+    attack patterns and visuals.
+    """
     RADIUS = 18
     COLORS = {
         EnemyState.PATROL: (90,180,240),
@@ -2343,6 +2617,7 @@ class Enemy:
         return (self.transform.pos - self.game.player.transform.pos).length()
 
     def _boids_force(self, neighbors):
+        """Compute combined Boids steering force from nearby enemies."""
         sep=Vec2(0,0); ali=Vec2(0,0); coh=Vec2(0,0)
         ns=na=nc=0
         for o in neighbors:
@@ -2412,6 +2687,7 @@ class Enemy:
         if self.shoot_cd>0: self.shoot_cd-=dt
 
     def _try_shoot(self, dt):
+        """Fire a single bullet toward the player when the cooldown expires."""
         if self.shoot_cd<=0:
             self.shoot_cd = self.shoot_interval
             to = self.game.player.transform.pos - self.transform.pos
@@ -2471,6 +2747,10 @@ class Enemy:
 
 
 class HeavyEnemy(Enemy):
+    """
+    Slow, high-HP enemy that fires three-bullet spread shots.
+    Drawn as a hexagon to visually distinguish it from the triangular scouts.
+    """
     RADIUS = 26
     COLORS = {
         EnemyState.PATROL: (60,140,80),
@@ -2530,6 +2810,10 @@ class HeavyEnemy(Enemy):
 
 
 class SniperEnemy(Enemy):
+    """
+    Lightweight enemy that fires a single fast-moving bullet with high damage.
+    Prefers to maintain distance and flees when damaged.
+    """
     RADIUS = 14
     COLORS = {
         EnemyState.PATROL: (180,60,220),
@@ -2560,6 +2844,10 @@ class SniperEnemy(Enemy):
 
 
 class KamikazeEnemy(Enemy):
+    """
+    Rushes directly at the player and explodes on contact.
+    Ignores the standard FSM and uses simplified direct-pursuit logic.
+    """
     RADIUS = 12
     COLORS = {
         EnemyState.PATROL: (200,80,0),
@@ -2598,6 +2886,10 @@ class KamikazeEnemy(Enemy):
 
 
 class CarrierEnemy(Enemy):
+    """
+    Large enemy that periodically deploys scout drones from its pool slot.
+    Destroying it stops the drone production for that instance.
+    """
     RADIUS = 30
     COLORS = {
         EnemyState.PATROL: (0,100,140),
@@ -2648,6 +2940,11 @@ class CarrierEnemy(Enemy):
 
 
 class TitanBoss(Enemy):
+    """
+    End-game boss with three attack phases: spread shot, burst, and omnidirectional.
+    Periodically spawns minions and launches meteor projectiles at the player.
+    Phase cycles every 12 seconds based on an internal timer.
+    """
     RADIUS = 46
     COLORS = {
         EnemyState.PATROL: (120, 0,  180),
@@ -2805,6 +3102,10 @@ class TitanBoss(Enemy):
 
 
 class EnemyMeteor:
+    """
+    Slow-moving chunk of debris launched by TitanBoss toward the player's position.
+    Damages the player on contact and is removed after a fixed lifetime.
+    """
     def __init__(self, game, sx, sy, tx, ty):
         self.game   = game
         self.pos    = Vec2(sx, sy)
@@ -2875,6 +3176,10 @@ class EnemyMeteor:
 
 
 class EnemyFactory:
+    """
+    Stateless factory that configures a pooled Enemy instance for a given type.
+    Centralises all stat definitions so balance changes are made in one place.
+    """
     _types = {
         "scout":    {"hp":30,  "speed":3.5, "shoot":1.5,  "cls": Enemy},
         "fighter":  {"hp":60,  "speed":2.8, "shoot":1.1,  "cls": Enemy},
@@ -2888,6 +3193,7 @@ class EnemyFactory:
 
     @staticmethod
     def configure(enemy, etype="scout"):
+        """Apply stat overrides from _types to the given enemy instance."""
         cfg = EnemyFactory._types.get(etype, EnemyFactory._types["scout"])
         enemy.health.max_hp      = cfg["hp"]
         enemy.health.hp          = cfg["hp"]
@@ -2898,6 +3204,11 @@ class EnemyFactory:
 
 
 class Asteroid:
+    """
+    Procedurally shaped obstacle.  HP scales with radius; destroyed asteroids
+    award a small XP and score bonus. Shape is pre-baked from a seeded RNG
+    so it remains stable between frames.
+    """
     def __init__(self, x, y, radius, seed):
         self.pos    = Vec2(x,y)
         self.radius = radius
@@ -2946,6 +3257,7 @@ class Asteroid:
                            max(2,self.radius//5))
 
 
+# Data container for a single upgradeable skill node.
 @dataclass
 class Skill:
     name: str
@@ -2964,6 +3276,11 @@ class Skill:
 
 
 class SkillTree:
+    """
+    Manages nine upgradeable skills. Skill points are earned on level-up
+    and persisted to disk between sessions. get_stat() translates a skill
+    level into a numeric multiplier used by the player entity.
+    """
     SAVE_FILE = "save_data.json"
 
     def __init__(self):
@@ -2987,6 +3304,7 @@ class SkillTree:
         self._reset_skills()
 
     def upgrade(self, key):
+        """Spend points to advance a skill by one level if affordable."""
         s = self.skills.get(key)
         if s and not s.is_maxed and self.points >= s.current_cost:
             self.points -= s.current_cost
@@ -3001,6 +3319,7 @@ class SkillTree:
         return False
 
     def get_stat(self, key):
+        """Return the numeric multiplier for a skill (1.0 = no bonus)."""
         s = self.skills.get(key)
         if not s: return 1.0
         if key == "grav_pull": return float(s.level)
@@ -3022,6 +3341,11 @@ class SkillTree:
 
 
 class LevelSystem:
+    """
+    Tracks accumulated XP and handles level-up events.  On each level-up,
+    the player receives +2 skill points and a rotating passive bonus
+    (HP, speed, or extra skill points).
+    """
     def __init__(self, player_ref):
         self.player           = player_ref
         self.level            = 1
@@ -3032,6 +3356,7 @@ class LevelSystem:
         self._banner_timer    = 0.0
 
     def add_xp(self, amount: int) -> bool:
+        """Add XP and trigger a level-up if the threshold is reached. Returns True on level-up."""
         self.xp += amount
         if self.xp >= self.xp_next:
             self.xp      -= self.xp_next
@@ -3077,7 +3402,97 @@ class LevelSystem:
     def xp_ratio(self): return self.xp / max(1, self.xp_next)
 
 
+class DirectionalShield:
+    """
+    Arc shield covering 90 degrees that the player rotates manually.
+    Blocks projectiles coming from the shielded arc direction.
+    Rotate with Q/R keys. Each block consumes shield energy; recharges over time.
+    """
+    ARC_DEGREES = 90.0
+    MAX_ENERGY  = 100.0
+    RECHARGE_RATE = 12.0   # energy/s
+    DRAIN_PER_BLOCK = 25.0
+
+    def __init__(self):
+        self.angle    = 0.0      # center angle of shield arc in degrees (world-space)
+        self.energy   = self.MAX_ENERGY
+        self.active   = False    # True while [Q] held
+        self._block_flash = 0.0
+
+    def update(self, dt):
+        keys = pygame.key.get_pressed()
+        self.active = keys[pygame.K_q] and self.energy > 0
+        if keys[pygame.K_r]:
+            mx, my = pygame.mouse.get_pos()
+            # Align shield toward mouse (set externally by player update)
+            pass
+        if not self.active:
+            self.energy = min(self.MAX_ENERGY, self.energy + self.RECHARGE_RATE * dt)
+        self._block_flash = max(0.0, self._block_flash - dt)
+
+    def rotate_to_mouse(self, player_screen_x, player_screen_y):
+        """Called from player update to keep arc aimed at mouse."""
+        mx, my = pygame.mouse.get_pos()
+        dx = mx - player_screen_x
+        dy = my - player_screen_y
+        if dx != 0 or dy != 0:
+            self.angle = math.degrees(math.atan2(dy, dx))
+
+    def blocks(self, impact_angle_deg: float) -> bool:
+        """Return True if the shield absorbs a hit from impact_angle_deg."""
+        if not self.active or self.energy <= 0:
+            return False
+        diff = (impact_angle_deg - self.angle + 180) % 360 - 180
+        if abs(diff) <= self.ARC_DEGREES / 2:
+            self.energy = max(0, self.energy - self.DRAIN_PER_BLOCK)
+            self._block_flash = 0.15
+            return True
+        return False
+
+    def draw(self, surf, sx, sy, player_angle_rad):
+        """Draw the arc segment around the player ship."""
+        if not self.active and self.energy >= self.MAX_ENERGY:
+            return
+        R = 36
+        arc_rad = math.radians(self.ARC_DEGREES)
+        start   = math.radians(self.angle) - arc_rad / 2
+        end     = math.radians(self.angle) + arc_rad / 2
+
+        energy_ratio = self.energy / self.MAX_ENERGY
+        if self._block_flash > 0:
+            col = (255, 255, 100)
+        elif self.active:
+            col = (int(80 * (1 - energy_ratio) + 0 * energy_ratio),
+                   int(200 * energy_ratio),
+                   int(255 * energy_ratio))
+        else:
+            col = (60, 60, 80)
+
+        arc_surf = pygame.Surface((R*2+8, R*2+8), pygame.SRCALPHA)
+        alpha = 200 if self.active else 80
+        pygame.draw.arc(arc_surf, (*col, alpha),
+                        (4, 4, R*2, R*2), -end, -start, 5)
+        surf.blit(arc_surf, (sx - R - 4, sy - R - 4))
+
+        # Energy bar under ship
+        bw = 40
+        pygame.draw.rect(surf, (20,20,20), (sx-bw//2, sy+R+4, bw, 5), border_radius=2)
+        fill = int(bw * energy_ratio)
+        if fill > 0:
+            ecol = (0, 200, 255) if energy_ratio > 0.3 else (255, 80, 80)
+            pygame.draw.rect(surf, ecol, (sx-bw//2, sy+R+4, fill, 5), border_radius=2)
+
+    @property
+    def ratio(self):
+        return self.energy / self.MAX_ENERGY
+
+
 class Player:
+    """
+    The player-controlled ship.  Composes Transform, Health, Physics and Input
+    components. Shooting logic, nano-bot management, damage effects and
+    module-stat integration all live here.
+    """
     RADIUS = 22
 
     def __init__(self, game):
@@ -3100,6 +3515,7 @@ class Player:
         self.modules     = ModuleInventory()
         self.loc_damage  = LocalizedDamage()
         self._nano_bots: List[NanoBotCloud] = []
+        self.dir_shield  = DirectionalShield()
 
     @property
     def shoot_interval(self):
@@ -3128,10 +3544,15 @@ class Player:
         self.rect.center = (int(self.transform.pos.x), int(self.transform.pos.y))
         if self.shoot_cd > 0: self.shoot_cd -= dt
         if self.inv_cd   > 0: self.inv_cd   -= dt
+        self.dir_shield.update(dt)
+        sx_p = int(self.transform.pos.x - self.game.camera.x)
+        sy_p = int(self.transform.pos.y - self.game.camera.y)
+        self.dir_shield.rotate_to_mouse(sx_p, sy_p)
         if pygame.mouse.get_pressed()[0] and self.shoot_cd <= 0:
             self._shoot()
 
     def _shoot(self):
+        """Fire bullets toward the mouse cursor, respecting multi-shot level and synergies."""
         self.shoot_cd = self.shoot_interval
         self.game.sfx.play("player_shoot", 0.35)
         self.game.eco.register_shot(multi=self.game.skill_tree.skills["multi_shot"].level > 0)
@@ -3181,7 +3602,16 @@ class Player:
 
 
     def take_damage(self, amount, bullet_pos=None):
+        """Apply damage, start invincibility frames, trigger audio muffling and camera shake."""
         if self.inv_cd <= 0:
+            # Check directional shield
+            if bullet_pos:
+                impact_dir = bullet_pos - self.transform.pos
+                impact_angle = math.degrees(math.atan2(impact_dir.y, impact_dir.x))
+                if self.dir_shield.blocks(impact_angle):
+                    # Shield absorbed the hit — spark effect only
+                    self.game._particles_spawn(bullet_pos, (80, 220, 255), 6)
+                    return
             prev_hp = self.health.hp
             self.health.take_damage(amount)
             self.inv_cd = 0.8
@@ -3242,6 +3672,42 @@ class Player:
 
         for nb in self._nano_bots:
             nb.draw(surf, camera)
+
+        #Tesla Link: draw lightning between active nano-bots within range 
+        active_nbs = [nb for nb in self._nano_bots if nb.active]
+        TESLA_DIST = 140
+        for i in range(len(active_nbs)):
+            for j in range(i+1, len(active_nbs)):
+                nb_a = active_nbs[i]
+                nb_b = active_nbs[j]
+                pp2  = self.transform.pos
+                pa   = Vec2(pp2.x + math.cos(nb_a.angle)*NANO_BOT_ORBIT_R,
+                            pp2.y + math.sin(nb_a.angle)*NANO_BOT_ORBIT_R)
+                pb2  = Vec2(pp2.x + math.cos(nb_b.angle)*NANO_BOT_ORBIT_R,
+                            pp2.y + math.sin(nb_b.angle)*NANO_BOT_ORBIT_R)
+                dist_ab = (pa - pb2).length()
+                if dist_ab < TESLA_DIST:
+                    sax = int(pa.x - camera.x); say = int(pa.y - camera.y)
+                    sbx = int(pb2.x - camera.x); sby = int(pb2.y - camera.y)
+                    # Jagged lightning: 4 midpoint segments
+                    pts = [(sax, say)]
+                    steps = 4
+                    for k in range(1, steps):
+                        t2 = k / steps
+                        mx2 = int(sax + (sbx-sax)*t2 + random.randint(-6,6))
+                        my2 = int(say + (sby-say)*t2 + random.randint(-6,6))
+                        pts.append((mx2, my2))
+                    pts.append((sbx, sby))
+                    alpha = int(180 * (1 - dist_ab/TESLA_DIST))
+                    bolt_s = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
+                    pygame.draw.lines(bolt_s, (100, 220, 255, alpha), False, pts, 1)
+                    pygame.draw.lines(bolt_s, (200, 240, 255, alpha//3), False, pts, 2)
+                    surf.blit(bolt_s, (0, 0))
+
+        # Directional Shield visual 
+        angle_rad2 = math.radians(self.transform.angle)
+        self.dir_shield.draw(surf, sx, sy, angle_rad2)
+
         mx, my = pygame.mouse.get_pos()
         pygame.draw.line(surf, (0,70,110), (sx,sy), (mx,my), 1)
 
@@ -3325,7 +3791,7 @@ class ShadowShip:
         if self._wreck:
             if dist < 300:
                 self._wreck = False
-                self.game.ai_log._push("⚠ PECIO ACTIVADO — IA Sombra en línea.", 6.0)
+                self.game.ai_log._push("PECIO ACTIVADO — IA Sombra en línea.", 6.0)
                 self.game.sfx.play("boss_warning")
             return
 
@@ -3440,8 +3906,8 @@ class NebulaTerrainSystem:
             self._plasma_boost = max(0.0, self._plasma_boost - dt * 2)
 
     def hud_label(self) -> str:
-        if self.in_plasma:       return "⚡ PLASMA — Vel MAX | Escudo drain"
-        if self.in_interference: return "📡 Interferencia — Radar OFF"
+        if self.in_plasma:       return "  PLASMA — Vel MAX | Escudo drain"
+        if self.in_interference: return "  Interferencia — Radar OFF"
         return ""
 
     def radar_active(self) -> bool:
@@ -3520,7 +3986,7 @@ class OrbitalBody:
             pygame.draw.circle(surf, (200, 220, 255), (sx, sy), pulse_r)
             pygame.draw.circle(surf, WHITE, (sx, sy), max(4, R//3))
             rm2 = ResourceManager()
-            lbl = rm2.get_font(10, True).render("★ ESTRELLA DE NEUTRONES", True, (180, 210, 255))
+            lbl = rm2.get_font(10, True).render(" ESTRELLA DE NEUTRONES", True, (180, 210, 255))
             surf.blit(lbl, (sx - lbl.get_width()//2, sy + R + 4))
         else:
             atm_r = R + 8
@@ -3544,7 +4010,7 @@ class OrbitalBody:
             surf.blit(ring_rot, (sx - ring_rot.get_width()//2,
                                   sy - ring_rot.get_height()//2))
             rm2 = ResourceManager()
-            lbl = rm2.get_font(10).render("⬤ PLANETA", True, self._color)
+            lbl = rm2.get_font(10).render("PLANETA", True, self._color)
             surf.blit(lbl, (sx - lbl.get_width()//2, sy + R + 4))
 
     def _draw_warp_grid(self, surf, sx, sy, camera):
@@ -3652,7 +4118,7 @@ class SegmentedWormBoss:
             seg.active = True
         self._trail = [Vec2(s.pos) for s in self.segments]
         self.active = True
-        self.game.ai_log._push("⚠ GUSANO ESPACIAL detectado. Prioridad MÁXIMA.", 7.0)
+        self.game.ai_log._push("GUSANO ESPACIAL detectado. Prioridad MÁXIMA.", 7.0)
         self.game.sfx.play("boss_warning")
         self.game.sfx.play("titan_spawn")
 
@@ -3873,7 +4339,7 @@ class LocalizedDamage:
         pygame.draw.line(surf, WHITE, (cx, cy-size//2), (cx, cy+size//2), 1)
         worst = self.worst_sector()
         if self.damage[worst] > 25:
-            lbl = rm.get_font(10, True).render(f"⚠{worst[:2]}", True, RED)
+            lbl = rm.get_font(10, True).render(f" {worst[:2]}", True, RED)
             surf.blit(lbl, (cx - lbl.get_width()//2, cy + size//2 + 4))
 
     @staticmethod
@@ -3931,7 +4397,7 @@ class MissionLog:
         }
 
         lines = [
-            f"═══ CRÓNICA DE MISIÓN ═══",
+            f" CRÓNICA DE MISIÓN ",
             f"Modo: {mode} | Duración: {mins}m {secs:02d}s",
             f"El piloto operó en el Sector ({sector_x},{sector_y}).",
         ]
@@ -3953,7 +4419,6 @@ class MissionLog:
             "El eco de sus disparos se perdió en la nebulosa.",
         ]
         lines.append(random.choice(flavours))
-        lines.append("══════════════════════════")
         return lines
 
     def draw_heatmap(self, surf, offset_x, offset_y, w, h):
@@ -4049,9 +4514,10 @@ class SpaceCreature:
 
 
 class GravityZone:
-    """Black hole or slow nebula zone generated procedurally in sectors."""
+    """Black hole, slow nebula, or white hole zone generated procedurally in sectors."""
     TYPE_BLACKHOLE = "blackhole"
     TYPE_NEBULA    = "nebula"
+    TYPE_WHITEHOLE = "whitehole"
 
     def __init__(self, x, y, radius, zone_type):
         self.pos      = Vec2(x, y)
@@ -4072,6 +4538,9 @@ class GravityZone:
         if self.type == self.TYPE_BLACKHOLE:
             pull = -d.normalize() * GRAVITY_STRENGTH * strength * dt
             return pull
+        if self.type == self.TYPE_WHITEHOLE:
+            push = d.normalize() * GRAVITY_STRENGTH * 0.65 * strength * dt
+            return push
         return Vec2(0, 0)
 
     def in_zone(self, pos: "Vec2") -> bool:
@@ -4094,7 +4563,7 @@ class GravityZone:
             pygame.draw.circle(surf, (0,0,0), (sx, sy), core)
             pygame.draw.circle(surf, (140,0,220), (sx, sy), core, 2)
             rm2 = ResourceManager()
-            lbl = rm2.get_font(11, True).render("⚫ AGUJERO NEGRO", True, (140,0,220))
+            lbl = rm2.get_font(11, True).render("AGUJERO NEGRO", True, (140,0,220))
             surf.blit(lbl, (sx - lbl.get_width()//2, sy + core + 4))
         else:
             for ring_r in range(int(r), 0, -25):
@@ -4103,9 +4572,22 @@ class GravityZone:
                 pygame.draw.circle(gs, (0, 60, 160, al), (ring_r, ring_r), ring_r)
                 surf.blit(gs, (sx-ring_r, sy-ring_r))
             rm2 = ResourceManager()
-            lbl = rm2.get_font(11).render("🌫 NEBULOSA DENSA", True, (60, 120, 200))
+            lbl = rm2.get_font(11).render("NEBULOSA DENSA", True, (60, 120, 200))
             surf.blit(lbl, (sx - lbl.get_width()//2, sy - 14))
 
+        if self.type == self.TYPE_WHITEHOLE:
+            for ring_r in range(int(r), 0, -20):
+                al = int(35 * (ring_r/r) + 5*math.sin(t*3 + ring_r*0.05))
+                al = max(0, min(90, al))
+                gs = pygame.Surface((ring_r*2, ring_r*2), pygame.SRCALPHA)
+                pygame.draw.circle(gs, (255, 255, 180, al), (ring_r, ring_r), ring_r)
+                surf.blit(gs, (sx-ring_r, sy-ring_r))
+            core = int(18 + 6*math.sin(t*4))
+            pygame.draw.circle(surf, (255, 255, 255), (sx, sy), core)
+            pygame.draw.circle(surf, (255, 220, 80), (sx, sy), core, 2)
+            rm2 = ResourceManager()
+            lbl = rm2.get_font(11, True).render("AGUJERO BLANCO", True, (255, 230, 80))
+            surf.blit(lbl, (sx - lbl.get_width()//2, sy + core + 4))
 
 class ShipModule:
     """Dropped by destroyed enemies; player collects them for stat boosts."""
@@ -4114,7 +4596,7 @@ class ShipModule:
         "engine": {"label":"MOTOR",  "color":(255,160,40),  "desc":"Vel +10%",     "stat":"speed"},
         "armor":  {"label":"ARMADURA","color":(80,220,80),  "desc":"HP +25",       "stat":"hp"},
         "core":   {"label":"NÚCLEO", "color":(200,80,255),  "desc":"Daño +12%",    "stat":"dmg"},
-        "lens":   {"label":"LENTE",  "color":(255,220,0),   "desc":"Gravedad★",    "stat":"grav"},
+        "lens":   {"label":"LENTE",  "color":(255,220,0),   "desc":"Gravedad",    "stat":"grav"},
     }
     RADIUS = 10
 
@@ -4188,6 +4670,11 @@ class ModuleInventory:
 
 
 class WorldGenerator:
+    """
+    Procedural content generator.  Sectors are generated on demand and cached
+    so they remain stable as the player revisits areas.  Noise-based density
+    controls asteroid distribution; heavier sectors appear closer to the origin.
+    """
     def __init__(self, seed, player_level=1):
         self.seed         = seed
         self.player_level = player_level
@@ -4201,6 +4688,7 @@ class WorldGenerator:
             self._cache.clear()
 
     def get_sector(self, sx, sy):
+        """Return the list of Asteroid objects for sector (sx, sy), generating if needed."""
         key = (sx, sy, self.player_level)
         if key in self._cache: return self._cache[key]
         wx, wy = sx*SECTOR_SIZE, sy*SECTOR_SIZE
@@ -4217,6 +4705,7 @@ class WorldGenerator:
         return asts
 
     def get_stars(self, sx, sy):
+        """Return the background star data for sector (sx, sy)."""
         key = (sx, sy)
         if key not in self._star_cache:
             rng = random.Random(self.seed^sx^(sy<<16))
@@ -4229,6 +4718,7 @@ class WorldGenerator:
 
 
     def get_orbital_bodies(self, sx: int, sy: int) -> list:
+        """Return any OrbitalBody instances present in sector (sx, sy)."""
         key = ("ob", sx, sy)
         if key in self._cache: return self._cache[key]
         rng    = random.Random(self.seed ^ (sx*77711) ^ (sy*55337))
@@ -4243,6 +4733,7 @@ class WorldGenerator:
         return bodies
 
     def get_gravity_zones(self, sx: int, sy: int) -> list:
+        """Return any GravityZone instances present in sector (sx, sy)."""
         key = ("gz", sx, sy)
         if key in self._cache: return self._cache[key]
         rng   = random.Random(self.seed ^ (sx*11117) ^ (sy*33331))
@@ -4251,7 +4742,13 @@ class WorldGenerator:
             wx = sx*SECTOR_SIZE + rng.uniform(80, SECTOR_SIZE-80)
             wy = sy*SECTOR_SIZE + rng.uniform(80, SECTOR_SIZE-80)
             r  = rng.uniform(110, 220)
-            zt = GravityZone.TYPE_BLACKHOLE if rng.random() < 0.4 else GravityZone.TYPE_NEBULA
+            roll = rng.random()
+            if roll < 0.35:
+                zt = GravityZone.TYPE_BLACKHOLE
+            elif roll < 0.55:
+                zt = GravityZone.TYPE_WHITEHOLE
+            else:
+                zt = GravityZone.TYPE_NEBULA
             zones.append(GravityZone(wx, wy, r, zt))
         self._cache[key] = zones
         return zones
@@ -4263,6 +4760,11 @@ class WorldGenerator:
 
 
 class WaveManager:
+    """
+    Spawns enemy waves on a fixed interval. Wave composition escalates with
+    player level; every fifth wave is a boss wave that includes a heavy
+    Carrier and a boss-class enemy.
+    """
     ENEMY_POOL_BY_LEVEL = [
         ["scout"],
         ["scout", "scout", "fighter"],
@@ -4286,6 +4788,7 @@ class WaveManager:
             self._spawn_wave()
 
     def _spawn_wave(self):
+        """Spawn a new set of enemies at random positions around the player."""
         player_level = self.game.player.level_sys.level
         pool_idx     = min(player_level-1, len(self.ENEMY_POOL_BY_LEVEL)-1)
         pool         = self.ENEMY_POOL_BY_LEVEL[pool_idx]
@@ -4318,6 +4821,10 @@ class WaveManager:
 
 
 class HUD:
+    """
+    Renders all in-game overlay elements: HP/XP bars, score, wave counter,
+    minimap, AI log, skill points, module inventory and control hints.
+    """
     def __init__(self, game):
         self.game         = game
         self.rm           = ResourceManager()
@@ -4362,22 +4869,35 @@ class HUD:
         self._minimap(surf)
 
         hint = rm.get_font(13).render(
-            "WASD:Mover | Click:Disparar | [E]:Hack | [2]:Skills | ESC:Pausa | [M]:SFX | [N]:Música | [X]:Nexo(menú)", True, GRAY)
+            "WASD:Mover | Click:Disparar | [E]:Hack | [F]:Flota | [Q]:Escudo | [2]:Skills | ESC:Pausa | [M]:SFX | [N]:Música | [X]:Nexo", True, GRAY)
         surf.blit(hint,(SCREEN_W//2-hint.get_width()//2, SCREEN_H-18))
 
         hs2 = getattr(self.game, "hack_sys", None)
         if hs2:
             hs2.draw_hud(surf, rm, 20, 132)
 
+        af3 = getattr(self.game, "allied_fleet", None)
+        if af3:
+            af3.draw_hud(surf, rm, 20, 155)
+
         nx = getattr(self.game, "nexus", None)
         if nx:
-            nxt = rm.get_font(12).render(f"⬡ Frags: {nx.fragments}", True, GOLD)
-            surf.blit(nxt, (20, 158))
+            nxt = rm.get_font(12).render(f"Frags: {nx.fragments}", True, GOLD)
+            surf.blit(nxt, (20, 178))
+
+        # Directional shield energy bar
+        ds = getattr(self.game.player, "dir_shield", None)
+        if ds:
+            shield_ratio = ds.ratio
+            shield_col   = (0, 200, 255) if shield_ratio > 0.3 else RED
+            active_txt   = "[Q] ESCUDO" if ds.active else f"[Q] ESCUDO {int(shield_ratio*100)}%"
+            sh_t = rm.get_font(12, True).render(active_txt, True, shield_col)
+            surf.blit(sh_t, (20, 196))
 
         fw = getattr(self.game, "faction_war", None)
         if fw and fw.buff_active:
-            fw_t = rm.get_font(12, True).render("★ ALIANZA ACTIVA +20% vel", True, (100,220,255))
-            surf.blit(fw_t, (20, 175))
+            fw_t = rm.get_font(12, True).render("ALIANZA ACTIVA +20% vel", True, (100,220,255))
+            surf.blit(fw_t, (20, 214))
 
         if self.game.sfx.muted:
             mute_t = rm.get_font(14,True).render("SFX OFF", True, RED)
@@ -4405,7 +4925,7 @@ class HUD:
 
         grav_sk = self.game.skill_tree.skills.get("grav_pull")
         if grav_sk and grav_sk.level > 0:
-            gl = rm.get_font(11, True).render(f"★ GRAV Lv{grav_sk.level}", True, (200,80,255))
+            gl = rm.get_font(11, True).render(f" GRAV Lv{grav_sk.level}", True, (200,80,255))
             surf.blit(gl, (SCREEN_W - 130, 48))
 
         p2 = self.game.player
@@ -4419,7 +4939,7 @@ class HUD:
                     (255, 120, 0) if "PLASMA" in lbl_nb else (60, 140, 255))
                 surf.blit(nbl, (SCREEN_W//2 - nbl.get_width()//2, 44))
             if not nb_t.radar_active():
-                glitch = rm.get_font(11, True).render("📡 RADAR OFFLINE", True, RED)
+                glitch = rm.get_font(11, True).render("RADAR OFFLINE", True, RED)
                 surf.blit(glitch, (SCREEN_W - 155, SCREEN_H - 135))
 
         wb2 = getattr(self.game, "_worm_boss", None)
@@ -4438,6 +4958,7 @@ class HUD:
             surf.blit(wlbl, (SCREEN_W//2 - wlbl.get_width()//2, by2+16))
 
     def _bar(self, surf, x, y, w, h, ratio, color, label, bar_tag=""):
+        """Draw a labelled fill-bar at (x,y) with the given dimensions and fill ratio."""
         pygame.draw.rect(surf, DARK_GRAY,(x,y,w,h),border_radius=4)
         fill_w = int(w*ratio)
         if fill_w > 0:
@@ -4451,6 +4972,7 @@ class HUD:
             surf.blit(tag, (tag_x, tag_y))
 
     def _minimap(self, surf):
+        """Render a small top-down overview map in the bottom-right corner."""
         ms     = 110
         mx_pos = SCREEN_W-ms-12
         my_pos = SCREEN_H-ms-12
@@ -4657,6 +5179,7 @@ class SkillTreeScreen:
         surf.blit(hint, (SCREEN_W // 2 - hint.get_width() // 2, SCREEN_H - 26))
 
 
+# Top-level states that drive the main game loop.
 class GameState(Enum):
     MENU     = auto()
     WARP     = auto()
@@ -4950,7 +5473,7 @@ class PauseMenu:
                 pygame.draw.rect(surf, NEON_BLUE, r, border_radius=8)
             pygame.draw.rect(surf, CYAN if sel else GRAY, r, 1, border_radius=8)
             col = YELLOW if opt=="Menú Principal" else (WHITE if sel else GRAY)
-            t   = rm.get_font(18,sel).render(("▶ " if sel else "  ")+opt, True, col)
+            t   = rm.get_font(18,sel).render(("" if sel else "  ")+opt, True, col)
             surf.blit(t,(r.centerx-t.get_width()//2, r.centery-t.get_height()//2))
             oy += 58
 
@@ -5091,7 +5614,7 @@ class ControlsGuide:
     """Full-screen controls/help overlay explaining the game."""
 
     SECTIONS = [
-        ("\U0001f3ae  CONTROLES", [
+        ("CONTROLES", [
             ("Movimiento",         "W A S D  o  flechas del teclado"),
             ("Disparar",           "Clic izquierdo del rat\u00f3n (apunta con el cursor)"),
             ("Hack EMP",           "[E]  \u2014 congela las balas enemigas cercanas"),
@@ -5100,20 +5623,20 @@ class ControlsGuide:
             ("Silenciar efectos",  "[M]"),
             ("Silenciar m\u00fasica",   "[N]"),
         ]),
-        ("\u2694  ENEMIGOS", [
-            ("\U0001f535 Explorador",       "R\u00e1pido y ligero. Patrulla y embiste. Poco HP."),
-            ("\U0001f7e1 Cazador",          "IA de enjambre (Boids). Se agrupa con otros."),
-            ("\U0001f7e0 Kamikaze",         "Carga directa contra ti. Explota al impacto."),
-            ("\U0001f7e3 Francotirador",    "Dispara balas muy r\u00e1pidas desde lejos. Huye si lo alcanzas."),
-            ("\U0001f7e2 Pesado",           "Dispara r\u00e1fagas de 3 balas. Mucho HP, lento."),
-            ("\U0001f535 Transportador",    "Lanza mini-drones. Al destruirlo caen m\u00f3dulos."),
-            ("\U0001f534 Jefe",             "HP elevado, ataques m\u00faltiples. Aparece cada varias oleadas."),
-            ("\u26a1 TITAN",            "Enorme, lento y devastador. Aparece en niveles 8, 16, 24\u2026"),
-            ("\U0001f300 Jefe Geom\u00e9trico",  "Patrones Bullet Hell: espiral, p\u00e9talos de rosa, anillo con hueco."),
-            ("\U0001f47b Nave Sombra",      "El fantasma de tu partida anterior. Aparece como pecio y se activa."),
-            ("\U0001f40d Gusano Espacial",  "Jefe segmentado. Destruye cada segmento por separado."),
+        ("ENEMIGOS", [
+            ("Explorador",       "R\u00e1pido y ligero. Patrulla y embiste. Poco HP."),
+            ("Cazador",          "IA de enjambre (Boids). Se agrupa con otros."),
+            ("Kamikaze",         "Carga directa contra ti. Explota al impacto."),
+            ("Francotirador",    "Dispara balas muy r\u00e1pidas desde lejos. Huye si lo alcanzas."),
+            ("Pesado",           "Dispara r\u00e1fagas de 3 balas. Mucho HP, lento."),
+            ("Transportador",    "Lanza mini-drones. Al destruirlo caen m\u00f3dulos."),
+            ("Jefe",             "HP elevado, ataques m\u00faltiples. Aparece cada varias oleadas."),
+            ("TITAN",            "Enorme, lento y devastador. Aparece en niveles 8, 16, 24\u2026"),
+            ("Jefe Geom\u00e9trico",  "Patrones Bullet Hell: espiral, p\u00e9talos de rosa, anillo con hueco."),
+            ("Nave Sombra",      "El fantasma de tu partida anterior. Aparece como pecio y se activa."),
+            ("Gusano Espacial",  "Jefe segmentado. Destruye cada segmento por separado."),
         ]),
-        ("\u2728  PODERES Y MEC\u00c1NICAS", [
+        ("PODERES Y MEC\u00c1NICAS", [
             ("Hack EMP  [E]",       "Congela balas enemigas en radio 420 px por 2.8 s. Recarga: 12 s."),
             ("Nano-Bots",           "Los bots orbitan tu nave y persiguen enemigos cercanos."),
             ("Gravedad Cu\u00e1ntica",   "Atrae balas enemigas hacia un punto de colapso."),
@@ -5125,7 +5648,7 @@ class ControlsGuide:
             ("Tormenta Nano-Bot",   "Sinergia Nexo: los bots generan campo el\u00e9ctrico que ralentiza."),
             ("Pulso Gravitacional", "Sinergia Nexo: el Hack tambi\u00e9n empuja a los enemigos."),
         ]),
-        ("\U0001f30c  ZONAS Y ENTORNO", [
+        ("ZONAS Y ENTORNO", [
             ("Nebulosa densa",      "Reduce tu velocidad m\u00e1xima al 55\u202f%."),
             ("Agujero negro",       "Te atrae. \u00dasalo para girar y acelerar \u2014 o muere."),
             ("Cuerpos orbitales",   "Planetas con gravedad. Pasa cerca para recibir impulso."),
@@ -5133,7 +5656,7 @@ class ControlsGuide:
             ("Criaturas espaciales","Neutrales. Puedes cazarlas por XP y m\u00f3dulos extra."),
             ("Guerra de Facciones", "Enjambre vs Drones luchan entre s\u00ed. Ayuda a uno y recibe buff de velocidad."),
         ]),
-        ("\U0001f527  M\u00d3DULOS Y PROGRESI\u00d3N", [
+        ("M\u00d3DULOS Y PROGRESI\u00d3N", [
             ("M\u00f3dulos de nave",     "Caen al destruir enemigos. Rec\u00f3gelos para mejoras pasivas."),
             ("  ALA",              "Giro +15\u202f%"),
             ("  MOTOR",            "Velocidad +10\u202f%"),
@@ -5145,7 +5668,7 @@ class ControlsGuide:
             ("\u00c1rbol de Habilidades","[2] durante la partida. 9 habilidades, cada una con varios niveles."),
             ("Niveles de jugador", "Cada nivel otorga +2 Skill pts y un bonus aleatorio (HP, vel, etc.)"),
         ]),
-        ("\U0001f4ca  MODOS DE JUEGO", [
+        ("MODOS DE JUEGO", [
             ("Cl\u00e1sico",            "Oleadas cronometradas. La siguiente llega al limpiar el mapa."),
             ("Supervivencia",      "Spawn constante de enemigos. Sin respiro. \u00bfCu\u00e1nto aguantas?"),
             ("Contrarreloj",       "3 minutos para maximizar puntuaci\u00f3n. Enfoque en kills r\u00e1pidos."),
@@ -5200,7 +5723,7 @@ class ControlsGuide:
         close_r = pygame.Rect(SCREEN_W - 54, 14, 40, 40)
         pygame.draw.rect(surf, (60, 10, 10), close_r, border_radius=6)
         pygame.draw.rect(surf, (180, 40, 40), close_r, 1, border_radius=6)
-        cl = rm.get_font(20, True).render("\u2715", True, (220, 100, 100))
+        cl = rm.get_font(20, True).render("x", True, (220, 100, 100))
         surf.blit(cl, (close_r.centerx - cl.get_width() // 2,
                        close_r.centery - cl.get_height() // 2))
 
@@ -5246,9 +5769,344 @@ class ControlsGuide:
             pygame.draw.rect(surf, (0, 160, 220), (bar_x, thumb_y, 6, thumb_h), border_radius=3)
 
         hint = rm.get_font(12).render(
-            "Rueda del rat\u00f3n para desplazar  |  [ESC] o [H] para cerrar",
+            "Rueda del rat\u00f3n para desplazar  |  [ESC] o X para cerrar",
             True, (50, 60, 80))
         surf.blit(hint, (SCREEN_W // 2 - hint.get_width() // 2, SCREEN_H - 22))
+
+
+
+class Scoreboard:
+    """
+    Persistent high-score table stored in SCOREBOARD_SAVE_FILE.
+
+    Each entry records score, level, wave, total kills, play time, game mode,
+    top-2 skills, and heat-map trajectory positions.
+
+    The draw() method renders a full-screen list; clicking a row opens a
+    detail panel showing the heat-map, top skills and enemy-kill breakdown.
+    """
+
+    MAX_ENTRIES = 10
+
+    def __init__(self):
+        self._entries: list = []
+        self._scroll        = 0
+        self._selected      = -1   # index of detail-view row (-1 = none)
+        self._load()
+
+    def add_entry(self, stats: dict):
+        """
+        Append a new run result from a _final_stats dict.
+        Keeps only the top MAX_ENTRIES scores and persists immediately.
+        """
+        # Compute top-2 skills by level
+        skills_dict = stats.get("skills", {})
+        skill_names_map = {
+            "fire_rate": "Cadencia", "bullet_dmg": "Dano",
+            "speed": "Velocidad",   "shield": "Escudo",
+            "multi_shot": "Multidisparo", "pierce": "Perforadora",
+            "grav_pull": "Gravedad", "nano_bots": "Nano-Bots",
+            "slingshot": "Asist.Grav.",
+        }
+        top2 = sorted(
+            [(skill_names_map.get(k, k), v) for k, v in skills_dict.items() if v > 0],
+            key=lambda x: x[1], reverse=True
+        )[:2]
+
+        entry = {
+            "score":        stats.get("score", 0),
+            "level":        stats.get("level", 1),
+            "wave":         stats.get("wave", 0),
+            "total_kills":  stats.get("total_kills", 0),
+            "play_time":    stats.get("play_time", 0.0),
+            "mode":         stats.get("mode", ""),
+            "kills":        stats.get("kills", {}),
+            "top2_skills":  top2,
+            "heatmap_pos":  stats.get("heatmap_pos", []),
+        }
+        self._entries.append(entry)
+        self._entries.sort(key=lambda e: e["score"], reverse=True)
+        self._entries = self._entries[:self.MAX_ENTRIES]
+        self._save()
+
+    def handle_event(self, event) -> bool:
+        """
+        Process scroll/click input inside the scoreboard overlay.
+        Returns True if the overlay should be closed (ESC or X button).
+        """
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_ESCAPE:
+                if self._selected >= 0:
+                    self._selected = -1   # close detail panel first
+                    return False
+                return True
+            if event.key == pygame.K_UP:
+                self._scroll = max(0, self._scroll - 30)
+            if event.key == pygame.K_DOWN:
+                self._scroll += 30
+        if event.type == pygame.MOUSEWHEEL:
+            self._scroll = max(0, self._scroll - event.y * 28)
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            close_r = pygame.Rect(SCREEN_W - 54, 14, 40, 40)
+            if close_r.collidepoint(event.pos):
+                if self._selected >= 0:
+                    self._selected = -1
+                    return False
+                return True
+            # Click on a row to toggle detail panel
+            VIS_Y0 = 86
+            ROW_H  = 56
+            PAD    = 40
+            mx, my = event.pos
+            row_i  = (my - VIS_Y0 + self._scroll) // ROW_H
+            if 0 <= row_i < len(self._entries):
+                self._selected = -1 if self._selected == row_i else row_i
+        return False
+
+    def _draw_heatmap_inline(self, surf, positions, ox, oy, w, h):
+        """Draw a mini heat-map from a list of (x,y) world positions."""
+        if len(positions) < 2:
+            bg = pygame.Surface((w, h), pygame.SRCALPHA)
+            bg.fill((4, 4, 16, 200))
+            surf.blit(bg, (ox, oy))
+            pygame.draw.rect(surf, (40, 40, 80), (ox, oy, w, h), 1)
+            rm = ResourceManager()
+            lbl = rm.get_font(10).render("Sin datos", True, GRAY)
+            surf.blit(lbl, (ox + w//2 - lbl.get_width()//2, oy + h//2 - 6))
+            return
+        bg = pygame.Surface((w, h), pygame.SRCALPHA)
+        bg.fill((4, 4, 16, 200))
+        surf.blit(bg, (ox, oy))
+        pygame.draw.rect(surf, (40, 40, 80), (ox, oy, w, h), 1)
+        sx = w / WORLD_W
+        sy = h / WORLD_H
+        pts = [(ox + int(x * sx), oy + int(y * sy)) for x, y in positions]
+        n = len(pts)
+        for i in range(1, n):
+            ratio = i / n
+            col   = (int(255 * ratio), int(80 * (1 - ratio)), int(180 * (1 - ratio)))
+            pygame.draw.line(surf, col, pts[i-1], pts[i], 1)
+        if pts:
+            pygame.draw.circle(surf, RED,  pts[-1], 3)
+            pygame.draw.circle(surf, GREEN, pts[0],  2)
+        rm = ResourceManager()
+        lbl = rm.get_font(9).render("Trayectoria", True, (60, 80, 120))
+        surf.blit(lbl, (ox + 2, oy + h - 12))
+
+    def _draw_detail_panel(self, surf, entry, px, py, pw, ph):
+        """Draw a detail card for the selected entry."""
+        rm = ResourceManager()
+        bg = pygame.Surface((pw, ph), pygame.SRCALPHA)
+        bg.fill((6, 8, 28, 240))
+        surf.blit(bg, (px, py))
+        pygame.draw.rect(surf, GOLD, (px, py, pw, ph), 1, border_radius=8)
+
+        y = py + 10
+        title_t = rm.get_font(14, True).render("DETALLES DE PARTIDA", True, GOLD)
+        surf.blit(title_t, (px + pw//2 - title_t.get_width()//2, y)); y += 22
+
+
+        hm_w, hm_h = pw - 20, 110
+        self._draw_heatmap_inline(surf, entry.get("heatmap_pos", []),
+                                  px + 10, y, hm_w, hm_h)
+        y += hm_h + 8
+
+
+        pygame.draw.line(surf, (40,40,80), (px+8, y), (px+pw-8, y), 1); y += 6
+        t2_hdr = rm.get_font(12, True).render("MEJORES HABILIDADES", True, (180, 220, 255))
+        surf.blit(t2_hdr, (px + 10, y)); y += 18
+        top2 = entry.get("top2_skills", [])
+        if top2:
+            for sk_name, sk_lv in top2:
+                bar_w = min(pw - 24, sk_lv * 22)
+                pygame.draw.rect(surf, (20, 60, 80), (px+10, y, pw-20, 14), border_radius=4)
+                pygame.draw.rect(surf, CYAN, (px+10, y, bar_w, 14), border_radius=4)
+                sk_t = rm.get_font(11, True).render(f"{sk_name}  Lv{sk_lv}", True, WHITE)
+                surf.blit(sk_t, (px+14, y+1)); y += 18
+        else:
+            na_t = rm.get_font(11).render("Sin habilidades", True, GRAY)
+            surf.blit(na_t, (px+10, y)); y += 18
+        y += 4
+
+        pygame.draw.line(surf, (40,40,80), (px+8, y), (px+pw-8, y), 1); y += 6
+        kills_hdr = rm.get_font(12, True).render("ENEMIGOS ELIMINADOS", True, (230, 80, 80))
+        surf.blit(kills_hdr, (px + 10, y)); y += 18
+        kills = entry.get("kills", {})
+        kill_names_map = {
+            "scout":"Explorador","fighter":"Cazador","kamikaze":"Kamikaze",
+            "sniper":"Francotirador","heavy":"Pesado","carrier":"Transportador",
+            "boss":"Jefe","titan":"TITAN",
+        }
+        kill_cols_map = {
+            "scout":(120,200,255),"fighter":(200,200,100),"kamikaze":(255,140,60),
+            "sniper":(200,80,255),"heavy":(80,220,80),"carrier":(0,200,200),
+            "boss":(255,80,80),"titan":(220,80,255),
+        }
+        total_k = max(1, sum(kills.values()))
+        for k, count in sorted(kills.items(), key=lambda x: x[1], reverse=True):
+            if count == 0: continue
+            kcol  = kill_cols_map.get(k, WHITE)
+            kname = kill_names_map.get(k, WHITE)
+            bar_w = max(2, int((pw - 24) * count / total_k))
+            pygame.draw.rect(surf, (20,20,20), (px+10, y, pw-20, 12), border_radius=3)
+            pygame.draw.rect(surf, kcol,       (px+10, y, bar_w, 12), border_radius=3)
+            kt = rm.get_font(11).render(f"{kname}: {count}", True, WHITE)
+            surf.blit(kt, (px+14, y)); y += 15
+            if y > py + ph - 16: break
+
+    def draw(self, surf):
+        """Render the scoreboard as a full-screen overlay."""
+        rm = ResourceManager()
+
+        # Dim background.
+        ov = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
+        ov.fill((2, 4, 18, 245))
+        surf.blit(ov, (0, 0))
+
+        # Title.
+        title = rm.get_font(30, True).render("MEJORES PUNTUACIONES", True, GOLD)
+        surf.blit(title, (SCREEN_W // 2 - title.get_width() // 2, 16))
+
+        # Close button.
+        close_r = pygame.Rect(SCREEN_W - 54, 14, 40, 40)
+        pygame.draw.rect(surf, (60, 10, 10), close_r, border_radius=6)
+        pygame.draw.rect(surf, (180, 40, 40), close_r, 1, border_radius=6)
+        cl = rm.get_font(20, True).render("x", True, (220, 100, 100))
+        surf.blit(cl, (close_r.centerx - cl.get_width() // 2,
+                       close_r.centery - cl.get_height() // 2))
+
+        VIS_Y0 = 86
+        ROW_H  = 56
+        PAD    = 40
+
+        # Determine layout: if detail open, shrink list width
+        detail_open = (self._selected >= 0 and
+                       self._selected < len(self._entries))
+        LIST_W = SCREEN_W - PAD * 2 if not detail_open else SCREEN_W // 2 - PAD
+        VIS_H  = SCREEN_H - VIS_Y0 - 30
+
+        # Column headers.
+        headers = ["#", "Puntuación", "Modo", "Nivel", "Oleada", "Bajas", "Tiempo"]
+        col_x   = [PAD, PAD+50, PAD+180, PAD+290, PAD+360, PAD+430, PAD+510]
+        for hdr, cx in zip(headers, col_x):
+            if cx > PAD + LIST_W: break
+            ht = rm.get_font(12, True).render(hdr, True, (100, 160, 200))
+            surf.blit(ht, (cx, VIS_Y0))
+        pygame.draw.line(surf, (40, 60, 100),
+                         (PAD, VIS_Y0 + 18), (PAD + LIST_W, VIS_Y0 + 18), 1)
+
+        click_hint = rm.get_font(11).render("Clic en una fila para ver detalles", True, (50,70,100))
+        surf.blit(click_hint, (PAD, VIS_Y0 - 14))
+
+        if not self._entries:
+            empty = rm.get_font(16).render("Sin partidas registradas todavía.", True, GRAY)
+            surf.blit(empty, (SCREEN_W // 2 - empty.get_width() // 2,
+                              VIS_Y0 + VIS_H // 2))
+        else:
+            content_h  = len(self._entries) * ROW_H + 8
+            max_scroll = max(0, content_h - VIS_H + 24)
+            self._scroll = min(self._scroll, max_scroll)
+
+            canvas = pygame.Surface((LIST_W + PAD*2, content_h), pygame.SRCALPHA)
+            canvas.fill((0, 0, 0, 0))
+
+            medal_cols = [GOLD, SILVER, (180, 100, 60)]
+
+            for i, entry in enumerate(self._entries):
+                ry = i * ROW_H
+                selected = (i == self._selected)
+
+                row_col = (20, 35, 70) if selected else ((10, 16, 36) if i % 2 == 0 else (6, 10, 26))
+                pygame.draw.rect(canvas, row_col,
+                                 (PAD - 8, ry + 2, LIST_W + 16, ROW_H - 4),
+                                 border_radius=6)
+                if selected:
+                    pygame.draw.rect(canvas, GOLD,
+                                     (PAD - 8, ry + 2, LIST_W + 16, ROW_H - 4),
+                                     1, border_radius=6)
+
+                rank_col = medal_cols[i] if i < 3 else (160, 170, 190)
+                mins = int(entry["play_time"] // 60)
+                secs = int(entry["play_time"] % 60)
+                mode_short = {
+                    GAMEMODE_CLASSIC:    "Clásico",
+                    GAMEMODE_SURVIVAL:   "Superv.",
+                    GAMEMODE_TIMEATTACK: "Contra.",
+                }.get(entry["mode"], entry["mode"][:7])
+                mode_col = {
+                    GAMEMODE_CLASSIC:    CYAN,
+                    GAMEMODE_SURVIVAL:   ORANGE,
+                    GAMEMODE_TIMEATTACK: YELLOW,
+                }.get(entry["mode"], WHITE)
+
+                # Top-2 skills snippet on row
+                top2 = entry.get("top2_skills", [])
+                top2_txt = "  ".join(f"{n} L{l}" for n, l in top2) if top2 else "-"
+
+                cells = [
+                    (f"#{i+1}",              rank_col,     True),
+                    (f"{entry['score']:,}",   YELLOW,       True),
+                    (mode_short,              mode_col,     False),
+                    (str(entry["level"]),     GREEN,        False),
+                    (str(entry["wave"]),      (100,180,255),False),
+                    (str(entry["total_kills"]),(230, 80, 80),False),
+                    (f"{mins}m {secs:02d}s", (160,200,255),False),
+                ]
+                for (text, col, bold), cx in zip(cells, col_x):
+                    if cx > PAD + LIST_W: break
+                    ct = rm.get_font(13, bold).render(text, True, col)
+                    canvas.blit(ct, (cx, ry + ROW_H // 2 - ct.get_height() // 2))
+
+                # Top-2 skills in small text under the row
+                if top2_txt != "-":
+                    sk_t = rm.get_font(10).render(f"{top2_txt}", True, (80, 160, 220))
+                    canvas.blit(sk_t, (PAD, ry + ROW_H - 14))
+
+            # Clip to visible region.
+            clip = pygame.Surface((LIST_W + PAD*2, VIS_H), pygame.SRCALPHA)
+            clip.fill((0, 0, 0, 0))
+            clip.blit(canvas, (0, -self._scroll))
+            surf.blit(clip, (0, VIS_Y0 + 22))
+
+            # Scroll bar.
+            if max_scroll > 0:
+                bar_x   = PAD + LIST_W + 8
+                bar_y   = VIS_Y0 + 22
+                bar_h   = VIS_H
+                thumb_h = max(24, int(bar_h * VIS_H / max(1, content_h)))
+                thumb_y = int(bar_y + (bar_h - thumb_h) * self._scroll / max_scroll)
+                pygame.draw.rect(surf, (30, 30, 50), (bar_x, bar_y, 6, bar_h), border_radius=3)
+                pygame.draw.rect(surf, GOLD,          (bar_x, thumb_y, 6, thumb_h), border_radius=3)
+
+            # Detail panel
+            if detail_open:
+                panel_x = SCREEN_W // 2 + 10
+                panel_w = SCREEN_W // 2 - PAD - 10
+                panel_h = VIS_H + 22
+                self._draw_detail_panel(surf, self._entries[self._selected],
+                                        panel_x, VIS_Y0, panel_w, panel_h)
+
+        hint = rm.get_font(12).render("↑↓ Desplazar  |  Clic: detalles  |  ESC o X para cerrar",
+                                      True, (50, 60, 80))
+        surf.blit(hint, (SCREEN_W // 2 - hint.get_width() // 2, SCREEN_H - 22))
+
+    # ── Persistence ────────────────────────────────────────────────────────
+
+    def _save(self):
+        try:
+            with open(SCOREBOARD_SAVE_FILE, "w") as f:
+                json.dump(self._entries, f, indent=2)
+        except Exception:
+            pass
+
+    def _load(self):
+        try:
+            if os.path.exists(SCOREBOARD_SAVE_FILE):
+                with open(SCOREBOARD_SAVE_FILE) as f:
+                    self._entries = json.load(f)
+        except Exception:
+            self._entries = []
+
 
 class MainMenu:
     MODES = [GAMEMODE_CLASSIC, GAMEMODE_SURVIVAL, GAMEMODE_TIMEATTACK]
@@ -5283,6 +6141,10 @@ class MainMenu:
                 self.game.running = False
 
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            if getattr(self, "_score_btn", None) and self._score_btn.collidepoint(event.pos):
+                self.game.sfx.play("ui_click", 0.2)
+                self.game._scoreboard_open = True
+                return
             if getattr(self, "_help_btn", None) and self._help_btn.collidepoint(event.pos):
                 self.game.controls_guide.toggle()
                 return
@@ -5398,9 +6260,22 @@ class MainMenu:
         hbg = (0, 60, 100) if help_hov else (0, 30, 60)
         pygame.draw.rect(surf, hbg, help_btn, border_radius=8)
         pygame.draw.rect(surf, (0, 140, 200) if help_hov else (0, 80, 130), help_btn, 1, border_radius=8)
-        ht = rm.get_font(14, True).render("CONTROLES  [H]", True, (0, 200, 255) if help_hov else (0, 140, 180))
+        ht = rm.get_font(14, True).render("CONTROLES", True, (0, 200, 255) if help_hov else (0, 140, 180))
         surf.blit(ht, (help_btn.centerx - ht.get_width()//2, help_btn.centery - ht.get_height()//2))
         self._help_btn = help_btn
+
+        # Scoreboard button: positioned to the left of the help button.
+        score_btn = pygame.Rect(SCREEN_W - 340, SCREEN_H - 56, 160, 40)
+        score_hov = score_btn.collidepoint(mx_h, my_h)
+        sbg = (60, 40, 0) if score_hov else (30, 20, 0)
+        pygame.draw.rect(surf, sbg, score_btn, border_radius=8)
+        pygame.draw.rect(surf, (GOLD[0], GOLD[1], GOLD[2]) if score_hov else (120, 100, 0),
+                         score_btn, 1, border_radius=8)
+        st2 = rm.get_font(14, True).render("PUNTUACIONES", True,
+                                           GOLD if score_hov else (160, 130, 0))
+        surf.blit(st2, (score_btn.centerx - st2.get_width() // 2,
+                        score_btn.centery - st2.get_height() // 2))
+        self._score_btn = score_btn
 
         nav = rm.get_font(13).render("◄ ► Cambiar modo de juego  |  [N] Música  |  [X] Nexo ", True,(50,55,70))
         surf.blit(nav,(SCREEN_W//2-nav.get_width()//2, 488))
@@ -5414,6 +6289,11 @@ class MainMenu:
 
 
 class Game:
+    """
+    Central controller.  Owns all subsystems, the main loop, event dispatch,
+    update orchestration and the draw pipeline.  All game objects reference
+    self.game to access shared services (pool, camera, sfx, etc.).
+    """
     def __init__(self):
         pygame.init()
         self.screen    = pygame.display.set_mode((SCREEN_W,SCREEN_H))
@@ -5439,6 +6319,8 @@ class Game:
         self.pause_menu   = PauseMenu(self)
         self.main_menu    = MainMenu(self)
         self.controls_guide = ControlsGuide()
+        self.scoreboard         = Scoreboard()
+        self._scoreboard_open   = False
 
         self.quadtree   = Quadtree(QTBounds(0,0,WORLD_W,WORLD_H))
         self.camera     = Vec2(0,0)
@@ -5482,9 +6364,12 @@ class Game:
         self._parallax_bg       = ParallaxBackground(self.seed)
         self._localized_sparks  = LocalizedSparks()
         self._audio_muffle_cd   = 0.0
+        self.allied_fleet       = AlliedFleet(self)
+        self._tesla_dmg_cd      = 0.0
         self.sfx.play_music("menu")
 
     def _make_enemy_pool(self) -> "ObjectPool":
+        """Build the shared enemy pool with pre-allocated instances of each subclass."""
         counts = {
             Enemy:        50,
             HeavyEnemy:   20,
@@ -5504,7 +6389,7 @@ class Game:
         return p
 
     def _begin_warp(self):
-        """Start the warp animation; game initialises silently in the background."""
+        """Trigger the warp transition animation and silently initialise a new run in the background."""
         self._warp = WarpTransition(SCREEN_W, SCREEN_H)
         self._start_game()
         self.state = GameState.WARP
@@ -5512,6 +6397,7 @@ class Game:
         self.sfx.play("warp")
 
     def _build_nebula(self):
+        """Generate a low-resolution nebula tint surface centred on the player's current position."""
         scale = 8
         w,h   = SCREEN_W//scale, SCREEN_H//scale
         surf  = pygame.Surface((w,h))
@@ -5523,6 +6409,7 @@ class Game:
         return pygame.transform.scale(surf,(SCREEN_W,SCREEN_H))
 
     def run(self):
+        """Main game loop: caps dt at 50 ms, dispatches events, updates and draws."""
         self._last_dt = 0.016
         while self.running:
             dt  = min(self.clock.tick(FPS)/1000.0, 0.05)
@@ -5535,6 +6422,7 @@ class Game:
         pygame.quit()
 
     def _events(self):
+        """Route pygame events to the appropriate state handler."""
         for ev in pygame.event.get():
             if ev.type == pygame.QUIT:
                 self.running = False
@@ -5542,6 +6430,10 @@ class Game:
             elif self.state == GameState.MENU:
                 if getattr(self, "controls_guide", None) and self.controls_guide.open:
                     self.controls_guide.handle_event(ev)
+                elif getattr(self, "_scoreboard_open", False):
+                    # Route events to the scoreboard overlay; close it on ESC or X.
+                    if self.scoreboard.handle_event(ev):
+                        self._scoreboard_open = False
                 elif getattr(self, "_nexus_menu_open", False):
                     if self.nexus.handle_event(ev, ai_log=getattr(self, "ai_log", None)):
                         self._nexus_menu_open = False
@@ -5568,6 +6460,9 @@ class Game:
                         self.sfx.toggle_music()
                     elif ev.key == pygame.K_e:
                         self.hack_sys.activate(self)
+                    elif ev.key == pygame.K_f:
+                        af = getattr(self, "allied_fleet", None)
+                        if af: af.summon()
 
             elif self.state == GameState.SKILL:
                 if ev.type == pygame.KEYDOWN and ev.key == pygame.K_2:
@@ -5603,6 +6498,7 @@ class Game:
                     self._stats_scroll = max(0, self._stats_scroll - ev.y * 25)
 
     def _update(self, dt):
+        """Advance all game systems by dt seconds. Skips most logic in non-PLAYING states."""
         if self.state == GameState.WARP:
             if self._warp:
                 self._warp.update(dt)
@@ -5764,6 +6660,9 @@ class Game:
 
         self.faction_war.update(dt)
 
+        af = getattr(self, "allied_fleet", None)
+        if af: af.update(dt)
+
         self._dyn_camera.update(dt, p, self)
 
         self._deferred_light.update(dt)
@@ -5815,6 +6714,38 @@ class Game:
                         e.health.take_damage(2)
                         self._particles_spawn(e.transform.pos, CYAN, 2)
 
+        # ── Tesla Link damage: enemies inside a nano-bot lightning arc take damage ──
+        active_nbs2 = [nb for nb in p._nano_bots if nb.active]
+        TESLA_DIST2 = 140
+        TESLA_DMG_CD = getattr(self, "_tesla_dmg_cd", 0.0)
+        TESLA_DMG_CD -= dt
+        self._tesla_dmg_cd = max(0.0, TESLA_DMG_CD)
+        if TESLA_DMG_CD <= 0 and len(active_nbs2) >= 2:
+            for i in range(len(active_nbs2)):
+                for j in range(i+1, len(active_nbs2)):
+                    nb_a2 = active_nbs2[i]
+                    nb_b2 = active_nbs2[j]
+                    pa2   = Vec2(p.transform.pos.x + math.cos(nb_a2.angle)*NANO_BOT_ORBIT_R,
+                                 p.transform.pos.y + math.sin(nb_a2.angle)*NANO_BOT_ORBIT_R)
+                    pb3   = Vec2(p.transform.pos.x + math.cos(nb_b2.angle)*NANO_BOT_ORBIT_R,
+                                 p.transform.pos.y + math.sin(nb_b2.angle)*NANO_BOT_ORBIT_R)
+                    if (pa2 - pb3).length() < TESLA_DIST2:
+                        seg_rect = pygame.Rect(
+                            min(pa2.x, pb3.x) - 4, min(pa2.y, pb3.y) - 4,
+                            abs(pa2.x - pb3.x) + 8, abs(pa2.y - pb3.y) + 8
+                        )
+                        for e in [e for e in self.enemy_pool.active if e.active]:
+                            if e.rect.colliderect(seg_rect):
+                                dead = e.health.take_damage(3)
+                                self._particles_spawn(e.transform.pos, (80, 200, 255), 3)
+                                if dead:
+                                    e.active = False
+                                    self.enemy_pool.release(e)
+                                    p.score += 80
+                                    p.add_xp(20)
+                                    self.sfx.play("explosion_small")
+            self._tesla_dmg_cd = 0.18  # damage tick every 0.18s
+
         self._creature_spawn_cd -= dt
         if self._creature_spawn_cd <= 0:
             self._creature_spawn_cd = random.uniform(15.0, 30.0)
@@ -5843,12 +6774,28 @@ class Game:
                         if not gz._warned:
                             gz._warned = True
                             self.ai_log.push_zone()
+                    if gz.type == GravityZone.TYPE_WHITEHOLE and gz.in_zone(p.transform.pos):
+                        delta = gz.apply(p.transform.pos, p.transform.vel, dt)
+                        p.transform.vel += delta
+                        if not gz._warned:
+                            gz._warned = True
+                            self.ai_log._push("⬤ AGUJERO BLANCO — Zona de repulsión activa.", 4.5)
                     if gz.type == GravityZone.TYPE_NEBULA and gz.in_zone(p.transform.pos):
                         in_nebula = True
                     for e in active_en:
                         if gz.type == GravityZone.TYPE_BLACKHOLE and gz.in_zone(e.transform.pos):
                             delta = gz.apply(e.transform.pos, e.transform.vel, dt)
                             e.transform.vel += delta
+                        elif gz.type == GravityZone.TYPE_WHITEHOLE and gz.in_zone(e.transform.pos):
+                            delta = gz.apply(e.transform.pos, e.transform.vel, dt)
+                            e.transform.vel += delta
+                    # White hole deflects bullets (projectile scatter)
+                    if gz.type == GravityZone.TYPE_WHITEHOLE:
+                        for b in self.bullet_pool.active:
+                            bpos = Vec2(b.rect.centerx, b.rect.centery)
+                            if gz.in_zone(bpos):
+                                bdelta = gz.apply(bpos, b.vel, dt)
+                                b.vel += bdelta * 2.0
         if in_nebula:
             max_spd = MAX_SPEED_PLAYER * NEBULA_SLOW_FACTOR
             if p.transform.vel.length() > max_spd:
@@ -5887,6 +6834,7 @@ class Game:
             self.state = GameState.GAME_OVER
 
     def _spawn_titan(self):
+        """Pull a TitanBoss from the pool and spawn it at a random distance from the player."""
         pp  = self.player.transform.pos
         ang = random.uniform(0, math.pi*2)
         ex  = max(100, min(WORLD_W-100, pp.x + math.cos(ang)*700))
@@ -5909,14 +6857,17 @@ class Game:
                 return
 
     def _snapshot_stats_and_ghost(self):
+        """Capture end-of-run statistics, save the ghost run and generate the mission chronicle."""
         self._snapshot_stats()
         GhostRun.save(self.player, self.wave_manager.wave,
                       (int(self.player.transform.pos.x//SECTOR_SIZE),
                        int(self.player.transform.pos.y//SECTOR_SIZE)))
         self._final_stats["chronicle"] = self._mission_log.generate_chronicle(self._final_stats)
         self._final_stats["heatmap_pos"] = list(self._mission_log._positions[-200:])
+        self.scoreboard.add_entry(self._final_stats)  # Persist run result to the high-score table.
 
     def _snapshot_stats(self):
+        """Populate _final_stats dict with all relevant end-of-run metrics."""
         p  = self.player
         ls = p.level_sys
         st = self.skill_tree
@@ -5934,9 +6885,11 @@ class Game:
         }
 
     def _active_enemy_count(self) -> int:
+        """Return the number of currently active enemy instances in the pool."""
         return sum(1 for e in self.enemy_pool.active if e.active)
 
     def _spawn_survival_enemy(self):
+        """Spawn a random cluster of enemies for Survival mode's continuous spawn loop."""
         pp   = self.player.transform.pos
         lvl  = self.player.level_sys.level
         pool = ["scout","fighter","kamikaze","sniper","heavy"]
@@ -5955,6 +6908,13 @@ class Game:
                 e.spawn(ex, ey)
 
     def _collisions(self, asteroids, enemies):
+        """
+        Resolve all collisions for one frame:
+          - Player bullets vs enemies and asteroids
+          - Enemy bullets vs player
+          - Player vs ghost ship, worm boss, asteroids, bullet-hell boss
+        Awards XP/score, releases bullets and triggers death effects.
+        """
         p          = self.player
         to_release = []
 
@@ -6108,12 +7068,13 @@ class Game:
                             self._particles_spawn(bhb.pos, PURPLE, 30)
                             self.sfx.play("explosion_boss")
                             self._nebula_flash_cd = 0.3
-                            self.ai_log._push("★ JEFE GEOMÉTRICO destruido. +8 Fragmentos de Datos.", 6.0)
+                            self.ai_log._push(" JEFE GEOMÉTRICO destruido. +8 Fragmentos de Datos.", 6.0)
                         if bullet in self.bullet_pool.active:
                             self.bullet_pool.release(bullet)
                         break
 
     def _particles_spawn(self, pos, color, count):
+        """Emit count screen-space particles at world position pos."""
         for _ in range(count):
             a   = random.uniform(0, math.pi*2)
             spd = random.uniform(1.5, 4.5)
@@ -6133,6 +7094,7 @@ class Game:
                          color=color[:3], life=0.35)
 
     def _update_particles(self, dt):
+        """Advance all live particles; remove any that have expired."""
         alive = []
         for p in self._particles:
             p["life"] -= dt
@@ -6143,6 +7105,7 @@ class Game:
         self._particles = alive
 
     def _draw(self, fps):
+        """Select the correct draw routine for the current state and flip the display."""
         s   = self.screen
         shake = getattr(self, "_cam_shake", None)
         if shake and self.state == GameState.PLAYING:
@@ -6153,6 +7116,9 @@ class Game:
                 self.nexus.draw_menu_overlay(s, self.rm, self._last_dt)
             if getattr(self, "controls_guide", None) and self.controls_guide.open:
                 self.controls_guide.draw(s)
+            if getattr(self, "_scoreboard_open", False):
+                # Draw the scoreboard overlay on top of everything else in the menu.
+                self.scoreboard.draw(s)
         elif self.state == GameState.WARP:
             if self._warp:
                 self._warp.draw(s)
@@ -6165,13 +7131,17 @@ class Game:
             chroma = getattr(self, "_chroma_cd", 0)
             if chroma > 0:
                 strength = min(chroma / 0.35, 1.0)
-                offset   = int(strength * 4)
-                r_surf = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
-                r_surf.fill((255, 0, 0, int(18 * strength)))
-                s.blit(r_surf, (-offset, 0), special_flags=pygame.BLEND_ADD)
-                b_surf = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
-                b_surf.fill((0, 0, 255, int(18 * strength)))
-                s.blit(b_surf, (offset, 0), special_flags=pygame.BLEND_ADD)
+                offset   = int(strength * 5)
+                # Proper chromatic aberration: isolate R and B channels with offset
+                chroma_src = s.copy()
+                r_surf = chroma_src.copy()
+                r_surf.fill((255, 0, 0), special_flags=pygame.BLEND_RGB_MULT)
+                b_surf = chroma_src.copy()
+                b_surf.fill((0, 0, 255), special_flags=pygame.BLEND_RGB_MULT)
+                r_surf.set_alpha(int(160 * strength))
+                b_surf.set_alpha(int(160 * strength))
+                s.blit(r_surf, (-offset, 0), special_flags=pygame.BLEND_RGB_ADD)
+                s.blit(b_surf, (offset,  0), special_flags=pygame.BLEND_RGB_ADD)
             self.hud.draw(s, fps)
             bt = getattr(self, "_bullet_time", None)
             if bt:
@@ -6192,6 +7162,8 @@ class Game:
         pygame.display.flip()
 
     def _draw_world(self, surf):
+        """Render the full world layer: background, asteroids, enemies, bullets,
+        particles, special objects and the deferred lighting pass."""
         surf.fill(DARK_BLUE)
         surf.blit(self._nebula_surf,(0,0))
 
@@ -6212,7 +7184,7 @@ class Game:
             self._nebula_flash_cd -= self._last_dt
             alpha = int(min(1.0, self._nebula_flash_cd / 0.18) * 80)
             fl = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
-            fl.fill((255, 120, 30, alpha))
+            #l.fill((255, 120, 30, alpha))
             surf.blit(fl, (0, 0))
 
         cx2 = int(self.player.transform.pos.x // SECTOR_SIZE)
@@ -6276,6 +7248,9 @@ class Game:
         hs = getattr(self, "hack_sys", None)
         if hs:
             hs.draw_overlay(surf, self.camera, self.player.transform.pos)
+
+        af2 = getattr(self, "allied_fleet", None)
+        if af2: af2.draw(surf, self.camera)
 
         bhb2 = getattr(self, "_bullet_hell_boss", None)
         if bhb2 and bhb2.active:
@@ -6371,13 +7346,13 @@ class Game:
         mins = int(st.get("play_time",0)//60)
         secs = int(st.get("play_time",0)%60)
         rows = [
-            ("🏆  Puntuación final",  f"{st.get('score',0):,}",   YELLOW),
-            ("⏱  Tiempo de misión",   f"{mins}m {secs:02d}s",     CYAN),
-            ("⭐  Nivel alcanzado",    str(st.get("level",1)),     GREEN),
-            ("🌊  Oleada máxima",      str(st.get("wave",0)),      (100,180,255)),
-            ("💀  Enemigos eliminados",str(st.get("total_kills",0)),(230,80,80)),
-            ("🔮  Skill pts restantes",str(st.get("skill_pts",0)), PURPLE),
-            ("⬡  Fragmentos de Datos",str(st.get("data_frags",0)), GOLD),
+            ("Puntuación final",  f"{st.get('score',0):,}",   YELLOW),
+            ("Tiempo de misión",   f"{mins}m {secs:02d}s",     CYAN),
+            ("Nivel alcanzado",    str(st.get("level",1)),     GREEN),
+            ("Oleada máxima",      str(st.get("wave",0)),      (100,180,255)),
+            ("Enemigos eliminados",str(st.get("total_kills",0)),(230,80,80)),
+            ("Skill pts restantes",str(st.get("skill_pts",0)), PURPLE),
+            ("Fragmentos de Datos",str(st.get("data_frags",0)), GOLD),
         ]
         for label, value, col in rows:
             left(label,  16, (180,180,200), y)
@@ -6505,6 +7480,7 @@ class Game:
         draw_btn("ESC  Menú principal", SCREEN_W//2 + 120, (60,10,10),(180,40,40), (220,120,120))
 
     def _start_game(self):
+        """Reset all per-run state without rebuilding persistent singletons (nexus, sfx)."""
         self.skill_tree.new_game()
         self.seed         = random.randint(0,999999)
         self.world_gen    = WorldGenerator(self.seed)
@@ -6541,6 +7517,8 @@ class Game:
         self._bullet_time      = BulletTimeSystem()
         self._localized_sparks = LocalizedSparks()
         self._audio_muffle_cd  = 0.0
+        self.allied_fleet      = AlliedFleet(self)
+        self._tesla_dmg_cd     = 0.0
         self.wave_manager.timer = self.wave_manager.wave_interval - 4.0
 
         if self.state != GameState.WARP:
@@ -6554,5 +7532,6 @@ class Game:
 
 
 if __name__ == "__main__":
+    # Instantiate the Game controller and enter the main loop.
     game = Game()
     game.run()
