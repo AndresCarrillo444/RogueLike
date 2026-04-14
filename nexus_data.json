@@ -1,11 +1,11 @@
 {
-  "fragments": 33,
+  "fragments": 19,
   "synergies": {
     "laser_shield": false,
-    "nano_storm": false,
-    "gravity_burst": false,
+    "nano_storm": true,
+    "gravity_burst": true,
     "overdrive": false,
-    "echo_shot": false
+    "echo_shot": true
   },
   "lore": [
     "Sector Alpha-7",
