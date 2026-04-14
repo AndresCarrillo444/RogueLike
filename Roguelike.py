@@ -6779,7 +6779,7 @@ class Game:
                         p.transform.vel += delta
                         if not gz._warned:
                             gz._warned = True
-                            self.ai_log._push("⬤ AGUJERO BLANCO — Zona de repulsión activa.", 4.5)
+                            self.ai_log._push("AGUJERO BLANCO — Zona de repulsión activa.", 4.5)
                     if gz.type == GravityZone.TYPE_NEBULA and gz.in_zone(p.transform.pos):
                         in_nebula = True
                     for e in active_en:
