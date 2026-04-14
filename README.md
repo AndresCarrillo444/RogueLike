@@ -45,7 +45,7 @@ Movimiento: Teclas W, A, S, D o flechas de dirección.
 
 Disparo: Espacio o Click izquierdo.
 
-Interacción: Tecla E para acceder al nexo o mejorar habilidades.
+Interacción: Tecla X para acceder al nexo o mejorar habilidades.
 
 ## Detalles de Desarrollo
 Este repositorio demuestra buenas prácticas de desarrollo backend aplicadas a videojuegos:
