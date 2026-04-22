@@ -32,12 +32,10 @@ El juego utiliza una máquina de estados para separar la lógica de ejecución:
 ## Instalación
 
 1. Asegúrate de tener Python 3.8 o superior instalado.
-2. Clona este repositorio:
-   ```bash
-   git clone [https://github.com/tu-usuario/nombre-del-repo.git](https://github.com/tu-usuario/nombre-del-repo.git)
-3. Instala las librerías necesarias:
+2. Instala las librerías necesarias:
    ```bash
    pip install pygame numpy
+   
 ## Uso y Controles
 Ejecución: python Roguelike.py
 
